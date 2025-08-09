@@ -130,15 +130,20 @@ class EntryManager:
                                 
                                 self.parent.entries.append(entry)
                                 
-                                # Add to list widget
-                                item = QListWidgetItem()
-                                item.setText(f"{entry.title}\n{entry.date} • {entry.word_count} words")
-                                item.setData(Qt.UserRole, len(self.parent.entries) - 1)
-                                self.parent.entry_list.addItem(item)
-                                
                             except Exception as e:
                                 print(f"Error loading entry {filename}: {e}")
                                 continue
+            
+            # Sort entries by created_time (newest first)
+            self.parent.entries.sort(key=lambda x: x.created_time, reverse=True)
+            
+            # Add sorted entries to list widget
+            for i, entry in enumerate(self.parent.entries):
+                item = QListWidgetItem()
+                item.setText(f"{entry.title}\n{entry.date} • {entry.word_count} words")
+                item.setData(Qt.UserRole, i)
+                self.parent.entry_list.addItem(item)
+                                
         except Exception as e:
             print(f"Error loading entries: {e}")
     
@@ -188,7 +193,9 @@ class EntryManager:
             try:
                 with open(file_path, 'w', encoding='utf-8') as f:
                     f.write("=== JOURNAL EXPORT ===\n\n")
-                    for entry in sorted(self.parent.entries, key=lambda x: x.date):
+                    # Sort entries by date for export (newest first)
+                    sorted_entries = sorted(self.parent.entries, key=lambda x: x.created_time, reverse=True)
+                    for entry in sorted_entries:
                         f.write(f"Title: {entry.title}\n")
                         f.write(f"Date: {entry.date}\n")
                         f.write(f"Words: {entry.word_count}\n")

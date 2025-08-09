@@ -1,6 +1,7 @@
 from datetime import datetime
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter, QDialog, QColorDialog
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QTextCursor
 
 from auto_save_thread import AutoSaveThread
 from ui_components import UIComponents
@@ -115,13 +116,7 @@ class EncryptedJournal(QMainWindow):
         dialog = CalendarDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             selected_date = dialog.get_selected_date()
-            # Filter entries by selected date
-            # This is a simplified version - you could implement more sophisticated filtering
             self.status_bar.showMessage(f"Browsing entries for {selected_date}", 3000)
-    
-    def filter_entries(self, text):
-        # Remove this method since search is removed
-        pass
     
     def export_journal(self):
         self.entry_manager.export_journal()
@@ -166,3 +161,92 @@ class EncryptedJournal(QMainWindow):
     
     def closeEvent(self, event):
         self.security_manager.handle_close_event(event)
+
+    # Formatting methods for the rich text toolbar
+    def change_font_family(self, font_name):
+        cursor = self.editor.textCursor()
+        if cursor.hasSelection():
+            format = QTextCharFormat()
+            format.setFontFamily(font_name)
+            cursor.mergeCharFormat(format)
+        else:
+            font = self.editor.currentFont()
+            font.setFamily(font_name)
+            self.editor.setCurrentFont(font)
+    
+    def change_font_size(self, size):
+        cursor = self.editor.textCursor()
+        if cursor.hasSelection():
+            format = QTextCharFormat()
+            format.setFontPointSize(size)
+            cursor.mergeCharFormat(format)
+        else:
+            font = self.editor.currentFont()
+            font.setPointSize(size)
+            self.editor.setCurrentFont(font)
+    
+    def toggle_bold(self):
+        cursor = self.editor.textCursor()
+        format = QTextCharFormat()
+        
+        if self.bold_btn.isChecked():
+            format.setFontWeight(QFont.Bold)
+        else:
+            format.setFontWeight(QFont.Normal)
+        
+        if cursor.hasSelection():
+            cursor.mergeCharFormat(format)
+        else:
+            self.editor.mergeCurrentCharFormat(format)
+    
+    def toggle_italic(self):
+        cursor = self.editor.textCursor()
+        format = QTextCharFormat()
+        format.setFontItalic(self.italic_btn.isChecked())
+        
+        if cursor.hasSelection():
+            cursor.mergeCharFormat(format)
+        else:
+            self.editor.mergeCurrentCharFormat(format)
+    
+    def toggle_underline(self):
+        cursor = self.editor.textCursor()
+        format = QTextCharFormat()
+        format.setFontUnderline(self.underline_btn.isChecked())
+        
+        if cursor.hasSelection():
+            cursor.mergeCharFormat(format)
+        else:
+            self.editor.mergeCurrentCharFormat(format)
+    
+    def insert_bullet_list(self):
+        cursor = self.editor.textCursor()
+        cursor.insertText("• ")
+    
+    def insert_numbered_list(self):
+        cursor = self.editor.textCursor()
+        cursor.insertText("1. ")
+    
+    def change_text_color(self):
+        color = QColorDialog.getColor(QColor(255, 255, 255), self)
+        if color.isValid():
+            cursor = self.editor.textCursor()
+            format = QTextCharFormat()
+            format.setForeground(color)
+            
+            if cursor.hasSelection():
+                cursor.mergeCharFormat(format)
+            else:
+                self.editor.mergeCurrentCharFormat(format)
+    
+    def change_background_color(self):
+        color = QColorDialog.getColor(QColor(0, 0, 0), self)
+        if color.isValid():
+            cursor = self.editor.textCursor()
+            format = QTextCharFormat()
+            format.setBackground(color)
+            
+            if cursor.hasSelection():
+                cursor.mergeCharFormat(format)
+            else:
+                self.editor.mergeCurrentCharFormat(format)

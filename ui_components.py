@@ -1,9 +1,10 @@
 from datetime import datetime
 from PyQt5.QtWidgets import (
     QTextEdit, QPushButton, QLabel, QHBoxLayout, QVBoxLayout,
-    QListWidget, QFrame, QStatusBar, QToolBar, QAction, QLineEdit, QProgressBar
+    QListWidget, QFrame, QStatusBar, QToolBar, QAction, QLineEdit, QProgressBar,
+    QSplitter, QWidget, QComboBox, QSpinBox, QColorDialog
 )
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QIcon
 from PyQt5.QtCore import Qt
 
 
@@ -21,27 +22,18 @@ class UIComponents:
         layout.setSpacing(10)
         layout.setContentsMargins(20, 20, 20, 20)
         
-        # Title with toggle button
-        title_frame = QFrame()
-        title_layout = QHBoxLayout(title_frame)
-        title_layout.setContentsMargins(0, 0, 0, 0)
-        
-        self.parent.toggle_btn = QPushButton("◀")
-        self.parent.toggle_btn.setMaximumSize(25, 25)
-        self.parent.toggle_btn.setMinimumSize(25, 25)
-        self.parent.toggle_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        
+        # Title
         title = QLabel("📔 SecureJournal Pro")
         title.setFont(QFont("Segoe UI", 24, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
         
-        title_layout.addWidget(self.parent.toggle_btn)
-        title_layout.addWidget(title, 1)
-        layout.addWidget(title_frame)
+        # Create a splitter for notebooks and entries
+        self.parent.left_splitter = QSplitter(Qt.Vertical)
         
-        # Notebooks section with integrated header
-        notebooks_frame = QFrame()
-        notebooks_layout = QVBoxLayout(notebooks_frame)
+        # Notebooks section
+        notebooks_widget = QWidget()
+        notebooks_layout = QVBoxLayout(notebooks_widget)
         notebooks_layout.setContentsMargins(0, 0, 0, 0)
         notebooks_layout.setSpacing(5)
         
@@ -65,15 +57,14 @@ class UIComponents:
         
         # Notebooks list
         self.parent.notebooks_list = QListWidget()
-        self.parent.notebooks_list.setMaximumHeight(120)
+        self.parent.notebooks_list.setMinimumHeight(80)
         
         notebooks_layout.addWidget(notebooks_header)
         notebooks_layout.addWidget(self.parent.notebooks_list)
-        layout.addWidget(notebooks_frame)
         
-        # Entries section with integrated header
-        entries_frame = QFrame()
-        entries_layout = QVBoxLayout(entries_frame)
+        # Entries section
+        entries_widget = QWidget()
+        entries_layout = QVBoxLayout(entries_widget)
         entries_layout.setContentsMargins(0, 0, 0, 0)
         entries_layout.setSpacing(5)
         
@@ -96,20 +87,28 @@ class UIComponents:
         
         # Entry list
         self.parent.entry_list = QListWidget()
-        self.parent.entry_list.setMinimumHeight(300)
+        self.parent.entry_list.setMinimumHeight(200)
         
         entries_layout.addWidget(entries_header)
         entries_layout.addWidget(self.parent.entry_list)
-        layout.addWidget(entries_frame)
+        
+        # Add widgets to splitter
+        self.parent.left_splitter.addWidget(notebooks_widget)
+        self.parent.left_splitter.addWidget(entries_widget)
+        
+        # Set initial splitter proportions (notebooks smaller, entries larger)
+        self.parent.left_splitter.setSizes([120, 400])
+        self.parent.left_splitter.setCollapsible(0, False)
+        self.parent.left_splitter.setCollapsible(1, False)
+        
+        layout.addWidget(self.parent.left_splitter)
         
         # Bottom lock button
         self.parent.lock_btn = QPushButton("🔒 Lock & Exit")
         self.parent.lock_btn.setMinimumHeight(40)
         self.parent.lock_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
         layout.addWidget(self.parent.lock_btn)
-        
         # Connect events
-        self.parent.toggle_btn.clicked.connect(self.parent.toggle_left_panel)
         self.parent.new_notebook_btn.clicked.connect(self.parent.create_notebook)
         self.parent.notebooks_list.itemClicked.connect(self.parent.select_notebook)
         self.parent.new_entry_btn.clicked.connect(self.parent.new_entry)
@@ -129,6 +128,10 @@ class UIComponents:
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(0)
         
+        # Word-like formatting toolbar
+        formatting_toolbar = self.create_formatting_toolbar()
+        layout.addWidget(formatting_toolbar)
+        
         # Single writing container for both title and editor
         writing_container = QFrame()
         writing_container.setObjectName("writingContainer")
@@ -136,16 +139,26 @@ class UIComponents:
         container_layout.setContentsMargins(15, 15, 15, 15)
         container_layout.setSpacing(10)
         
-        # Title section
+        # Title section with toggle button
         title_frame = QFrame()
         title_layout = QHBoxLayout(title_frame)
         title_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Toggle button on the left
+        self.parent.toggle_btn = QPushButton("◀")
+        self.parent.toggle_btn.setMaximumSize(25, 25)
+        self.parent.toggle_btn.setMinimumSize(25, 25)
+        self.parent.toggle_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        self.parent.toggle_btn.clicked.connect(self.parent.toggle_left_panel)
         
         self.parent.entry_title = QLineEdit()
         self.parent.entry_title.setPlaceholderText("Enter your entry title...")
         self.parent.entry_title.setFont(QFont("Segoe UI", 16, QFont.Bold))
         self.parent.entry_title.setMinimumHeight(45)
         self.parent.entry_title.setObjectName("entryTitle")
+        
+        title_layout.addWidget(self.parent.toggle_btn)
+        title_layout.addWidget(self.parent.entry_title, 1)
         
         # Action buttons
         buttons_frame = QFrame()
@@ -170,7 +183,6 @@ class UIComponents:
         buttons_layout.addWidget(self.parent.save_btn)
         buttons_layout.addWidget(self.parent.delete_btn)
         
-        title_layout.addWidget(self.parent.entry_title, 1)
         title_layout.addWidget(buttons_frame)
         container_layout.addWidget(title_frame)
         
@@ -233,7 +245,7 @@ class UIComponents:
         toolbar = QToolBar()
         self.parent.addToolBar(toolbar)
         
-        # Font size actions
+        # Font size actions with white text
         decrease_font = QAction("A-", self.parent)
         decrease_font.triggered.connect(self.parent.decrease_font_size)
         toolbar.addAction(decrease_font)
@@ -250,3 +262,141 @@ class UIComponents:
         word_wrap.setChecked(self.parent.config["word_wrap"])
         word_wrap.triggered.connect(self.parent.toggle_word_wrap)
         toolbar.addAction(word_wrap)
+        
+        # Style the toolbar actions to have white text
+        toolbar.setStyleSheet("""
+            QToolBar {
+                background-color: #2d2d2d;
+                border: none;
+                spacing: 3px;
+                padding: 5px;
+            }
+            QToolBar QToolButton {
+                color: #ffffff;
+                background-color: #404040;
+                border: 1px solid #555;
+                border-radius: 4px;
+                padding: 4px 8px;
+                margin: 2px;
+            }
+            QToolBar QToolButton:hover {
+                background-color: #4a4a4a;
+                border-color: #6b7280;
+            }
+            QToolBar QToolButton:pressed {
+                background-color: #333;
+            }
+            QToolBar QToolButton:checked {
+                background-color: #6b7280;
+                border-color: #7c8590;
+            }
+        """)
+
+    def create_formatting_toolbar(self):
+        toolbar = QFrame()
+        toolbar.setObjectName("formattingToolbar")
+        toolbar.setMinimumHeight(50)
+        layout = QHBoxLayout(toolbar)
+        layout.setContentsMargins(10, 5, 10, 5)
+        layout.setSpacing(5)
+        
+        # Undo/Redo
+        self.parent.undo_btn = QPushButton("↶")
+        self.parent.undo_btn.setMinimumSize(30, 30)
+        self.parent.undo_btn.setToolTip("Undo")
+        self.parent.undo_btn.clicked.connect(lambda: self.parent.editor.undo())
+        
+        self.parent.redo_btn = QPushButton("↷")
+        self.parent.redo_btn.setMinimumSize(30, 30)
+        self.parent.redo_btn.setToolTip("Redo")
+        self.parent.redo_btn.clicked.connect(lambda: self.parent.editor.redo())
+        
+        layout.addWidget(self.parent.undo_btn)
+        layout.addWidget(self.parent.redo_btn)
+        layout.addWidget(self.create_separator())
+        
+        # Font family
+        self.parent.font_combo = QComboBox()
+        self.parent.font_combo.setMinimumWidth(120)
+        self.parent.font_combo.addItems(["Segoe UI", "Arial", "Times New Roman", "Calibri", "Verdana", "Georgia"])
+        self.parent.font_combo.currentTextChanged.connect(self.parent.change_font_family)
+        layout.addWidget(self.parent.font_combo)
+        
+        # Font size
+        self.parent.font_size_spin = QSpinBox()
+        self.parent.font_size_spin.setRange(8, 72)
+        self.parent.font_size_spin.setValue(12)
+        self.parent.font_size_spin.setMinimumWidth(60)
+        self.parent.font_size_spin.valueChanged.connect(self.parent.change_font_size)
+        layout.addWidget(self.parent.font_size_spin)
+        
+        layout.addWidget(self.create_separator())
+        
+        # Bold, Italic, Underline
+        self.parent.bold_btn = QPushButton("B")
+        self.parent.bold_btn.setMinimumSize(30, 30)
+        self.parent.bold_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        self.parent.bold_btn.setCheckable(True)
+        self.parent.bold_btn.setToolTip("Bold")
+        self.parent.bold_btn.clicked.connect(self.parent.toggle_bold)
+        
+        self.parent.italic_btn = QPushButton("I")
+        self.parent.italic_btn.setMinimumSize(30, 30)
+        self.parent.italic_btn.setFont(QFont("Segoe UI", 10, 75, True))  # Italic
+        self.parent.italic_btn.setCheckable(True)
+        self.parent.italic_btn.setToolTip("Italic")
+        self.parent.italic_btn.clicked.connect(self.parent.toggle_italic)
+        
+        self.parent.underline_btn = QPushButton("U")
+        self.parent.underline_btn.setMinimumSize(30, 30)
+        self.parent.underline_btn.setFont(QFont("Segoe UI", 10))
+        self.parent.underline_btn.setCheckable(True)
+        self.parent.underline_btn.setToolTip("Underline")
+        self.parent.underline_btn.clicked.connect(self.parent.toggle_underline)
+        
+        layout.addWidget(self.parent.bold_btn)
+        layout.addWidget(self.parent.italic_btn)
+        layout.addWidget(self.parent.underline_btn)
+        
+        layout.addWidget(self.create_separator())
+        
+        # Lists
+        self.parent.bullet_btn = QPushButton("•")
+        self.parent.bullet_btn.setMinimumSize(30, 30)
+        self.parent.bullet_btn.setToolTip("Bullet List")
+        self.parent.bullet_btn.clicked.connect(self.parent.insert_bullet_list)
+        
+        self.parent.number_btn = QPushButton("1.")
+        self.parent.number_btn.setMinimumSize(30, 30)
+        self.parent.number_btn.setToolTip("Numbered List")
+        self.parent.number_btn.clicked.connect(self.parent.insert_numbered_list)
+        
+        layout.addWidget(self.parent.bullet_btn)
+        layout.addWidget(self.parent.number_btn)
+        
+        layout.addWidget(self.create_separator())
+        
+        # Colors
+        self.parent.text_color_btn = QPushButton("A")
+        self.parent.text_color_btn.setMinimumSize(30, 30)
+        self.parent.text_color_btn.setToolTip("Text Color")
+        self.parent.text_color_btn.clicked.connect(self.parent.change_text_color)
+        
+        self.parent.bg_color_btn = QPushButton("⬛")
+        self.parent.bg_color_btn.setMinimumSize(30, 30)
+        self.parent.bg_color_btn.setToolTip("Background Color")
+        self.parent.bg_color_btn.clicked.connect(self.parent.change_background_color)
+        
+        layout.addWidget(self.parent.text_color_btn)
+        layout.addWidget(self.parent.bg_color_btn)
+        
+        layout.addStretch()
+        
+        return toolbar
+    
+    def create_separator(self):
+        separator = QFrame()
+        separator.setFrameShape(QFrame.VLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        separator.setMaximumHeight(25)
+        return separator
