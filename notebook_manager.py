@@ -9,25 +9,31 @@ class NotebookManager:
     def create_notebook(self):
         name, ok = QInputDialog.getText(self.parent, "New Notebook", "Enter notebook name:")
         if ok and name.strip():
-            notebook_path = os.path.join(self.parent.notebooks_dir, name.strip())
-
-            if not os.path.exists(notebook_path):
-                os.makedirs(notebook_path)
-                QMessageBox.information(self.parent, "Success", f"Notebook '{name}' created!")
+            notebook_name = name.strip()
+            
+            # Create virtual folder in secure storage
+            try:
+                virtual_folder_path = f"notebooks/{notebook_name}"
+                self.parent.entry_manager.secure_storage.create_virtual_folder(virtual_folder_path)
+                
+                QMessageBox.information(self.parent, "Success", f"Notebook '{notebook_name}' created securely!")
                 self.load_notebooks()
-            else:
-                QMessageBox.warning(self.parent, "Error", "A notebook with that name already exists.")
+            except Exception as e:
+                QMessageBox.critical(self.parent, "Error", f"Failed to create notebook: {str(e)}")
     
     def load_notebooks(self):
         self.parent.notebooks_list.clear()
         notebooks = ["Default"]  # Always have a default notebook
         
-        if os.path.exists(self.parent.notebooks_dir):
-            for item in os.listdir(self.parent.notebooks_dir):
-                if os.path.isdir(os.path.join(self.parent.notebooks_dir, item)):
-                    notebooks.append(item)
+        try:
+            # Get all virtual folders that start with "notebooks/"
+            virtual_folders = self.parent.entry_manager.secure_storage.list_virtual_folders()
+            notebook_folders = [folder.replace("notebooks/", "") for folder in virtual_folders if folder.startswith("notebooks/")]
+            notebooks.extend(sorted(notebook_folders))
+        except Exception as e:
+            print(f"Error loading notebooks: {e}")
         
-        for notebook in sorted(notebooks):
+        for notebook in notebooks:
             item = QListWidgetItem(notebook)
             self.parent.notebooks_list.addItem(item)
         
@@ -38,5 +44,211 @@ class NotebookManager:
                 break
     
     def select_notebook(self, item):
-        self.parent.current_notebook = item.text()
+        old_notebook = self.parent.current_notebook
+        new_notebook = item.text()
+        
+        # Check for unsaved changes before switching
+        if self.parent.unsaved_changes:
+            reply = QMessageBox.question(self.parent, "Unsaved Changes", 
+                                       "You have unsaved changes. Save before switching notebooks?",
+                                       QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+            if reply == QMessageBox.Yes:
+                self.parent.save_entry()
+            elif reply == QMessageBox.Cancel:
+                # Revert selection
+                for i in range(self.parent.notebooks_list.count()):
+                    if self.parent.notebooks_list.item(i).text() == old_notebook:
+                        self.parent.notebooks_list.setCurrentRow(i)
+                        break
+                return
+        
+        # Switch to new notebook
+        self.parent.current_notebook = new_notebook
+        self.parent.new_entry()  # Clear current entry
         self.parent.entry_manager.load_recent_entries()
+        self.parent.status_bar.showMessage(f"Switched to notebook: {new_notebook}", 2000)
+        
+        # Update storage info
+        try:
+            stats = self.parent.entry_manager.get_storage_stats()
+            self.parent.ui_components.update_storage_info(stats)
+        except Exception:
+            pass
+    
+    def delete_notebook(self, notebook_name):
+        """Delete a notebook and all its entries"""
+        if notebook_name == "Default":
+            QMessageBox.warning(self.parent, "Cannot Delete", "The Default notebook cannot be deleted.")
+            return
+        
+        reply = QMessageBox.question(
+            self.parent, 
+            "Delete Notebook", 
+            f"Are you sure you want to delete notebook '{notebook_name}' and ALL its entries?\n\nThis action cannot be undone!",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            try:
+                # Get all files in this notebook
+                virtual_path_prefix = f"notebooks/{notebook_name}/"
+                files_to_delete = self.parent.entry_manager.secure_storage.list_files(virtual_path_prefix)
+                
+                # Delete all files
+                deleted_count = 0
+                for file_info in files_to_delete:
+                    virtual_path = file_info["virtual_path"]
+                    if self.parent.entry_manager.secure_storage.delete_file(virtual_path):
+                        deleted_count += 1
+                
+                # Delete the folder marker
+                folder_marker_path = f"notebooks/{notebook_name}/.folder_marker"
+                self.parent.entry_manager.secure_storage.delete_file(folder_marker_path)
+                
+                # Switch to Default notebook if we deleted the current one
+                if self.parent.current_notebook == notebook_name:
+                    self.parent.current_notebook = "Default"
+                    self.parent.new_entry()
+                
+                self.load_notebooks()
+                self.parent.entry_manager.load_recent_entries()
+                
+                QMessageBox.information(
+                    self.parent, 
+                    "Notebook Deleted", 
+                    f"Notebook '{notebook_name}' and {deleted_count} entries have been securely deleted."
+                )
+                
+            except Exception as e:
+                QMessageBox.critical(self.parent, "Delete Error", f"Failed to delete notebook: {str(e)}")
+    
+    def export_notebook(self, notebook_name):
+        """Export a specific notebook"""
+        from PyQt5.QtWidgets import QFileDialog
+        
+        file_path, _ = QFileDialog.getSaveFileName(
+            self.parent, 
+            f"Export Notebook: {notebook_name}", 
+            f"notebook_{notebook_name}_{datetime.now().strftime('%Y%m%d')}.html",
+            "HTML Files (*.html);;Text Files (*.txt)"
+        )
+        
+        if file_path:
+            try:
+                # Get all entries for this notebook
+                if notebook_name == "Default":
+                    path_prefix = "default/"
+                else:
+                    path_prefix = f"notebooks/{notebook_name}/"
+                
+                files = self.parent.entry_manager.secure_storage.list_files(path_prefix)
+                entries = []
+                
+                for file_info in files:
+                    try:
+                        virtual_path = file_info["virtual_path"]
+                        if not virtual_path.endswith('.enc'):
+                            continue
+                        
+                        encrypted_data = self.parent.entry_manager.secure_storage.load_file(virtual_path)
+                        if encrypted_data is None:
+                            continue
+                        
+                        entry_data = json.loads(encrypted_data.decode())
+                        entries.append(entry_data)
+                        
+                    except Exception as e:
+                        print(f"Error loading entry for export: {e}")
+                        continue
+                
+                # Sort entries by creation time
+                entries.sort(key=lambda x: x.get("created_time", ""), reverse=True)
+                
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    if file_path.endswith('.html'):
+                        # Export as HTML
+                        f.write(f"""
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Notebook Export: {notebook_name}</title>
+                            <style>
+                                body {{ font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; }}
+                                .entry {{ background: white; margin: 20px 0; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+                                .entry-header {{ border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }}
+                                .entry-title {{ font-size: 24px; font-weight: bold; color: #333; margin: 0; }}
+                                .entry-meta {{ color: #666; font-size: 14px; margin-top: 5px; }}
+                                .entry-content {{ line-height: 1.6; color: #444; }}
+                                img {{ max-width: 100%; height: auto; border-radius: 4px; margin: 10px 0; }}
+                            </style>
+                        </head>
+                        <body>
+                            <h1>📔 Notebook Export: {notebook_name}</h1>
+                            <p>Generated on {datetime.now().strftime("%B %d, %Y at %H:%M")}</p>
+                            <p>Total entries: {len(entries)}</p>
+                        """)
+                        
+                        for entry in entries:
+                            f.write(f"""
+                            <div class="entry">
+                                <div class="entry-header">
+                                    <h2 class="entry-title">{entry.get("title", "Untitled")}</h2>
+                                    <div class="entry-meta">{entry.get("date", "")} • {entry.get("word_count", 0)} words</div>
+                                </div>
+                                <div class="entry-content">
+                                    {entry.get("content", "")}
+                                </div>
+                            </div>
+                            """)
+                        
+                        f.write("</body></html>")
+                    else:
+                        # Export as plain text
+                        f.write(f"=== NOTEBOOK EXPORT: {notebook_name} ===\n\n")
+                        f.write(f"Generated on: {datetime.now().strftime('%B %d, %Y at %H:%M')}\n")
+                        f.write(f"Total entries: {len(entries)}\n\n")
+                        
+                        for entry in entries:
+                            f.write(f"Title: {entry.get('title', 'Untitled')}\n")
+                            f.write(f"Date: {entry.get('date', '')}\n")
+                            f.write(f"Words: {entry.get('word_count', 0)}\n")
+                            f.write("-" * 50 + "\n")
+                            f.write(entry.get("plain_text", entry.get("content", "")))
+                            f.write("\n\n" + "=" * 50 + "\n\n")
+                
+                QMessageBox.information(
+                    self.parent, 
+                    "Export Complete", 
+                    f"Notebook '{notebook_name}' exported successfully to:\n{file_path}\n\nEntries exported: {len(entries)}"
+                )
+                
+            except Exception as e:
+                QMessageBox.critical(self.parent, "Export Error", f"Failed to export notebook: {str(e)}")
+    
+    def get_notebook_stats(self, notebook_name):
+        """Get statistics for a specific notebook"""
+        try:
+            if notebook_name == "Default":
+                path_prefix = "default/"
+            else:
+                path_prefix = f"notebooks/{notebook_name}/"
+            
+            files = self.parent.entry_manager.secure_storage.list_files(path_prefix)
+            entry_files = [f for f in files if f["virtual_path"].endswith('.enc')]
+            
+            total_entries = len(entry_files)
+            total_size = sum(f["size"] for f in entry_files)
+            
+            return {
+                "total_entries": total_entries,
+                "total_size_bytes": total_size,
+                "total_size_mb": round(total_size / (1024 * 1024), 2) if total_size > 0 else 0.0
+            }
+            
+        except Exception as e:
+            print(f"Error getting notebook stats: {e}")
+            return {
+                "total_entries": 0,
+                "total_size_bytes": 0,
+                "total_size_mb": 0.0
+            }

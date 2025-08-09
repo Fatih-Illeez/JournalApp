@@ -1,5 +1,5 @@
 from datetime import datetime
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter, QDialog, QColorDialog
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter, QDialog, QColorDialog, QMessageBox
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QTextCursor
 
@@ -22,19 +22,26 @@ class EncryptedJournal(QMainWindow):
         self.unsaved_changes = False
         self.left_panel_visible = True
         
-        # Initialize managers
+        # Initialize settings manager first
         self.settings_manager = SettingsManager(self)
+        
+        # Setup settings and create key - this creates journal_dir and fernet
+        self.settings_manager.setup_settings()
+        self.settings_manager.load_or_create_key()
+        
+        # Now initialize other managers that depend on journal_dir and fernet
         self.ui_components = UIComponents(self)
         self.entry_manager = EntryManager(self)
         self.notebook_manager = NotebookManager(self)
         self.security_manager = SecurityManager(self)
         
-        # Setup
-        self.settings_manager.setup_settings()
-        self.settings_manager.load_or_create_key()
+        # Setup UI
         self.initUI()
         self.setup_auto_save()
         self.entry_manager.load_recent_entries()
+        
+        # Update initial storage info
+        self.update_storage_display()
         
     def initUI(self):
         # Central widget with splitter
@@ -90,27 +97,39 @@ class EncryptedJournal(QMainWindow):
             self.toggle_btn.setText("◀")
             self.left_panel_visible = True
     
+    def update_storage_display(self):
+        """Update the storage information display"""
+        try:
+            stats = self.entry_manager.get_storage_stats()
+            self.ui_components.update_storage_info(stats)
+        except Exception as e:
+            print(f"Error updating storage display: {e}")
+    
     # Delegate methods to managers
     def create_notebook(self):
         self.notebook_manager.create_notebook()
+        self.update_storage_display()
     
     def load_notebooks(self):
         self.notebook_manager.load_notebooks()
     
     def select_notebook(self, item):
         self.notebook_manager.select_notebook(item)
+        self.update_storage_display()
 
     def new_entry(self):
         self.entry_manager.new_entry()
     
     def save_entry(self):
         self.entry_manager.save_entry()
+        self.update_storage_display()
     
     def load_selected_entry(self, item):
         self.entry_manager.load_selected_entry(item)
     
     def delete_entry(self):
         self.entry_manager.delete_entry()
+        self.update_storage_display()
     
     def show_calendar(self):
         dialog = CalendarDialog(self)
@@ -120,6 +139,55 @@ class EncryptedJournal(QMainWindow):
     
     def export_journal(self):
         self.entry_manager.export_journal()
+    
+    def insert_image(self):
+        """Insert an image into the current entry"""
+        self.entry_manager.insert_image()
+    
+    def show_storage_stats(self):
+        """Show detailed storage statistics"""
+        try:
+            stats = self.entry_manager.get_storage_stats()
+            
+            # Get notebook-specific stats
+            notebook_stats = []
+            notebooks = ["Default"]
+            
+            # Get all notebooks
+            try:
+                virtual_folders = self.entry_manager.secure_storage.list_virtual_folders()
+                notebook_folders = [folder.replace("notebooks/", "") for folder in virtual_folders if folder.startswith("notebooks/")]
+                notebooks.extend(sorted(notebook_folders))
+            except Exception:
+                pass
+            
+            for notebook in notebooks:
+                nb_stats = self.notebook_manager.get_notebook_stats(notebook)
+                notebook_stats.append(f"{notebook}: {nb_stats['total_entries']} entries ({nb_stats['total_size_mb']} MB)")
+            
+            message = f"""Storage Statistics:
+            
+Total Files: {stats['virtual_files']}
+Physical Files: {stats['physical_files']}
+Total Size: {stats['total_size_mb']} MB
+
+Notebook Breakdown:
+{chr(10).join(notebook_stats)}
+
+Note: All files and folder names are encrypted and secure."""
+            
+            QMessageBox.information(self, "Storage Statistics", message)
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to get storage statistics: {str(e)}")
+    
+    def cleanup_storage(self):
+        """Clean up orphaned files"""
+        try:
+            self.entry_manager.cleanup_storage()
+            self.update_storage_display()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to cleanup storage: {str(e)}")
     
     def on_text_changed(self):
         self.unsaved_changes = True
@@ -146,6 +214,7 @@ class EncryptedJournal(QMainWindow):
     def auto_save(self):
         if self.unsaved_changes and self.entry_title.text().strip() and self.editor.toPlainText().strip():
             self.entry_manager.save_entry()
+            self.update_storage_display()
     
     def increase_font_size(self):
         self.settings_manager.increase_font_size()

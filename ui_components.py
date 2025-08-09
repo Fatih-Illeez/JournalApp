@@ -103,11 +103,30 @@ class UIComponents:
         
         layout.addWidget(self.parent.left_splitter)
         
+        # Storage info section
+        storage_frame = QFrame()
+        storage_layout = QVBoxLayout(storage_frame)
+        storage_layout.setContentsMargins(5, 5, 5, 5)
+        
+        storage_label = QLabel("🔒 Secure Storage")
+        storage_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        storage_label.setAlignment(Qt.AlignCenter)
+        
+        self.parent.storage_info_label = QLabel("Files: 0 • Size: 0 MB")
+        self.parent.storage_info_label.setFont(QFont("Segoe UI", 8))
+        self.parent.storage_info_label.setAlignment(Qt.AlignCenter)
+        self.parent.storage_info_label.setStyleSheet("color: #888;")
+        
+        storage_layout.addWidget(storage_label)
+        storage_layout.addWidget(self.parent.storage_info_label)
+        layout.addWidget(storage_frame)
+        
         # Bottom lock button
         self.parent.lock_btn = QPushButton("🔒 Lock & Exit")
         self.parent.lock_btn.setMinimumHeight(40)
         self.parent.lock_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
         layout.addWidget(self.parent.lock_btn)
+        
         # Connect events
         self.parent.new_notebook_btn.clicked.connect(self.parent.create_notebook)
         self.parent.notebooks_list.itemClicked.connect(self.parent.select_notebook)
@@ -186,12 +205,13 @@ class UIComponents:
         title_layout.addWidget(buttons_frame)
         container_layout.addWidget(title_frame)
         
-        # Editor
+        # Editor - Use QTextEdit for rich text support
         self.parent.editor = QTextEdit()
         self.parent.editor.setFont(QFont("Segoe UI", self.parent.config["font_size"]))
         self.parent.editor.setPlaceholderText("Start writing your thoughts here...")
         self.parent.editor.setLineWrapMode(QTextEdit.WidgetWidth if self.parent.config["word_wrap"] else QTextEdit.NoWrap)
         self.parent.editor.setObjectName("mainEditor")
+        self.parent.editor.setAcceptRichText(True)  # Enable rich text support for images
         container_layout.addWidget(self.parent.editor, 1)
         
         layout.addWidget(writing_container, 1)
@@ -262,6 +282,17 @@ class UIComponents:
         word_wrap.setChecked(self.parent.config["word_wrap"])
         word_wrap.triggered.connect(self.parent.toggle_word_wrap)
         toolbar.addAction(word_wrap)
+        
+        toolbar.addSeparator()
+        
+        # Storage management actions
+        storage_stats = QAction("Storage Stats", self.parent)
+        storage_stats.triggered.connect(self.parent.show_storage_stats)
+        toolbar.addAction(storage_stats)
+        
+        cleanup_storage = QAction("Cleanup Storage", self.parent)
+        cleanup_storage.triggered.connect(self.parent.cleanup_storage)
+        toolbar.addAction(cleanup_storage)
         
         # Style the toolbar actions to have white text
         toolbar.setStyleSheet("""
@@ -390,6 +421,15 @@ class UIComponents:
         layout.addWidget(self.parent.text_color_btn)
         layout.addWidget(self.parent.bg_color_btn)
         
+        layout.addWidget(self.create_separator())
+        
+        # Image insertion
+        self.parent.insert_image_btn = QPushButton("🖼️")
+        self.parent.insert_image_btn.setMinimumSize(35, 30)
+        self.parent.insert_image_btn.setToolTip("Insert Image")
+        self.parent.insert_image_btn.clicked.connect(self.parent.insert_image)
+        layout.addWidget(self.parent.insert_image_btn)
+        
         layout.addStretch()
         
         return toolbar
@@ -400,3 +440,12 @@ class UIComponents:
         separator.setFrameShadow(QFrame.Sunken)
         separator.setMaximumHeight(25)
         return separator
+    
+    def update_storage_info(self, stats):
+        """Update the storage information display"""
+        try:
+            files = stats.get("virtual_files", 0)
+            size_mb = stats.get("total_size_mb", 0.0)
+            self.parent.storage_info_label.setText(f"Files: {files} • Size: {size_mb} MB")
+        except Exception:
+            self.parent.storage_info_label.setText("Files: - • Size: - MB")
