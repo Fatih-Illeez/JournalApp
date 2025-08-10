@@ -94,6 +94,22 @@ class EntryManager:
         """Check if HTML content contains images"""
         return "<img" in html_content.lower()
     
+    def get_notebook_entry_count(self, notebook_name):
+        """Get the number of entries in a specific notebook"""
+        try:
+            if notebook_name == "Default":
+                path_prefix = "default/"
+            else:
+                path_prefix = f"notebooks/{notebook_name}/"
+            
+            files = self.secure_storage.list_files(path_prefix)
+            entry_files = [f for f in files if f["virtual_path"].endswith('.enc')]
+            return len(entry_files)
+            
+        except Exception as e:
+            print(f"Error counting entries for notebook {notebook_name}: {e}")
+            return 0
+    
     def load_recent_entries(self):
         self.parent.entry_list.clear()
         self.parent.entries = []

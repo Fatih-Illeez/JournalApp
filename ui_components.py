@@ -2,7 +2,7 @@ from datetime import datetime
 from PyQt5.QtWidgets import (
     QTextEdit, QPushButton, QLabel, QHBoxLayout, QVBoxLayout,
     QListWidget, QFrame, QStatusBar, QToolBar, QAction, QLineEdit, QProgressBar,
-    QSplitter, QWidget, QComboBox, QSpinBox, QColorDialog
+    QSplitter, QWidget, QComboBox, QSpinBox, QColorDialog, QListWidgetItem
 )
 from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QIcon
 from PyQt5.QtCore import Qt
@@ -449,3 +449,31 @@ class UIComponents:
             self.parent.storage_info_label.setText(f"Files: {files} • Size: {size_mb} MB")
         except Exception:
             self.parent.storage_info_label.setText("Files: - • Size: - MB")
+    
+    def update_notebooks_with_counts(self, notebooks_data):
+        """Update the notebooks list with entry counts"""
+        self.parent.notebooks_list.clear()
+        
+        for notebook_info in notebooks_data:
+            item = QListWidgetItem()
+            notebook_name = notebook_info['name']
+            entry_count = notebook_info['count']
+            
+            # Main notebook name in larger font
+            main_text = notebook_name
+            # Count in smaller, muted font
+            count_text = f"  ({entry_count} entries)" if entry_count != 1 else f"  ({entry_count} entry)"
+            
+            # Set the main text
+            item.setText(main_text + count_text)
+            
+            # Style the item to show count in smaller font
+            item.setData(Qt.UserRole, notebook_name)  # Store actual name for selection
+            self.parent.notebooks_list.addItem(item)
+        
+        # Select current notebook
+        for i in range(self.parent.notebooks_list.count()):
+            item = self.parent.notebooks_list.item(i)
+            if item.data(Qt.UserRole) == self.parent.current_notebook:
+                self.parent.notebooks_list.setCurrentRow(i)
+                break

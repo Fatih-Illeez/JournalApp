@@ -51,15 +51,18 @@ class SettingsManager:
 
     def increase_font_size(self):
         self.parent.config["font_size"] = min(24, self.parent.config["font_size"] + 1)
-        self.parent.editor.setFont(QFont("Segoe UI", self.parent.config["font_size"]))
+        if hasattr(self.parent, 'editor'):
+            self.parent.editor.setFont(QFont("Segoe UI", self.parent.config["font_size"]))
         self.save_config()
     
     def decrease_font_size(self):
         self.parent.config["font_size"] = max(8, self.parent.config["font_size"] - 1)
-        self.parent.editor.setFont(QFont("Segoe UI", self.parent.config["font_size"]))
+        if hasattr(self.parent, 'editor'):
+            self.parent.editor.setFont(QFont("Segoe UI", self.parent.config["font_size"]))
         self.save_config()
     
     def toggle_word_wrap(self, checked):
         self.parent.config["word_wrap"] = checked
-        self.parent.editor.setLineWrapMode(QTextEdit.WidgetWidth if checked else QTextEdit.NoWrap)
+        if hasattr(self.parent, 'editor'):
+            self.parent.editor.setLineWrapMode(QTextEdit.WidgetWidth if checked else QTextEdit.NoWrap)
         self.save_config()

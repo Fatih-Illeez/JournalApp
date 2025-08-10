@@ -1,8 +1,10 @@
 import sys
 import os
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtGui import QPalette, QColor
 from PyQt5.QtCore import Qt
+
+# Import the updated journal app
 from journal_app import EncryptedJournal
 
 
@@ -59,10 +61,22 @@ def main():
         }
     """)
     
-    journal = EncryptedJournal()
-    journal.show()
-    
-    sys.exit(app.exec_())
+    try:
+        journal = EncryptedJournal()
+        
+        # Check if authentication was successful
+        # If the journal object has the necessary attributes, authentication succeeded
+        if hasattr(journal, 'fernet') and journal.fernet is not None:
+            journal.show()
+            sys.exit(app.exec_())
+        else:
+            # Authentication failed or was cancelled
+            sys.exit(0)
+            
+    except Exception as e:
+        QMessageBox.critical(None, "Startup Error", 
+                           f"Failed to start SecureJournal Pro:\n{str(e)}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

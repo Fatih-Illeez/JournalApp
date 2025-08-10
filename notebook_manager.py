@@ -1,5 +1,8 @@
 import os
+import json
+from datetime import datetime
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QListWidgetItem
+from PyQt5.QtCore import Qt
 
 
 class NotebookManager:
@@ -22,30 +25,43 @@ class NotebookManager:
                 QMessageBox.critical(self.parent, "Error", f"Failed to create notebook: {str(e)}")
     
     def load_notebooks(self):
-        self.parent.notebooks_list.clear()
-        notebooks = ["Default"]  # Always have a default notebook
+        """Load notebooks with entry counts"""
+        notebooks_data = []
+        
+        # Always have Default notebook first
+        default_count = self.parent.entry_manager.get_notebook_entry_count("Default")
+        notebooks_data.append({
+            'name': "Default",
+            'count': default_count
+        })
         
         try:
             # Get all virtual folders that start with "notebooks/"
             virtual_folders = self.parent.entry_manager.secure_storage.list_virtual_folders()
             notebook_folders = [folder.replace("notebooks/", "") for folder in virtual_folders if folder.startswith("notebooks/")]
-            notebooks.extend(sorted(notebook_folders))
+            
+            # Add other notebooks with their counts
+            for notebook_name in sorted(notebook_folders):
+                entry_count = self.parent.entry_manager.get_notebook_entry_count(notebook_name)
+                notebooks_data.append({
+                    'name': notebook_name,
+                    'count': entry_count
+                })
+                
         except Exception as e:
             print(f"Error loading notebooks: {e}")
         
-        for notebook in notebooks:
-            item = QListWidgetItem(notebook)
-            self.parent.notebooks_list.addItem(item)
-        
-        # Select current notebook
-        for i in range(self.parent.notebooks_list.count()):
-            if self.parent.notebooks_list.item(i).text() == self.parent.current_notebook:
-                self.parent.notebooks_list.setCurrentRow(i)
-                break
+        # Update the UI with notebook data including counts
+        self.parent.ui_components.update_notebooks_with_counts(notebooks_data)
     
     def select_notebook(self, item):
         old_notebook = self.parent.current_notebook
-        new_notebook = item.text()
+        # Get the actual notebook name from UserRole data
+        new_notebook = item.data(Qt.UserRole)
+        
+        if new_notebook is None:  # Fallback to parsing text
+            notebook_text = item.text()
+            new_notebook = notebook_text.split('  (')[0]  # Extract name before count
         
         # Check for unsaved changes before switching
         if self.parent.unsaved_changes:
@@ -57,7 +73,8 @@ class NotebookManager:
             elif reply == QMessageBox.Cancel:
                 # Revert selection
                 for i in range(self.parent.notebooks_list.count()):
-                    if self.parent.notebooks_list.item(i).text() == old_notebook:
+                    list_item = self.parent.notebooks_list.item(i)
+                    if list_item.data(Qt.UserRole) == old_notebook:
                         self.parent.notebooks_list.setCurrentRow(i)
                         break
                 return

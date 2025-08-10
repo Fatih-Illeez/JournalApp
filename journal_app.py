@@ -10,6 +10,7 @@ from notebook_manager import NotebookManager
 from settings_manager import SettingsManager
 from security_manager import SecurityManager
 from calendar_dialog import CalendarDialog
+from password_dialog import PasswordDialog
 from styles import get_app_stylesheet
 
 
@@ -27,6 +28,11 @@ class EncryptedJournal(QMainWindow):
         
         # Setup settings and create key - this creates journal_dir and fernet
         self.settings_manager.setup_settings()
+        
+        # Check password before proceeding
+        if not self.authenticate_user():
+            return
+        
         self.settings_manager.load_or_create_key()
         
         # Now initialize other managers that depend on journal_dir and fernet
@@ -42,6 +48,117 @@ class EncryptedJournal(QMainWindow):
         
         # Update initial storage info
         self.update_storage_display()
+    
+    def authenticate_user(self):
+        """Authenticate user with password. Delete everything after 3 failed attempts."""
+        # Check if password file exists
+        import os
+        password_file = os.path.join(self.settings_manager.parent.journal_dir, "auth.enc")
+        
+        if os.path.exists(password_file):
+            # Password exists, verify it
+            return self.verify_existing_password()
+        else:
+            # First time setup, create password
+            return self.create_new_password()
+    
+    def create_new_password(self):
+        """Create a new password for first-time setup"""
+        dialog = PasswordDialog(self, mode="create")
+        if dialog.exec_() == QDialog.Accepted:
+            password = dialog.get_password()
+            if self.save_password_hash(password):
+                QMessageBox.information(self, "Password Set", "Your password has been set successfully!")
+                return True
+            else:
+                QMessageBox.critical(self, "Error", "Failed to save password. Please try again.")
+                return False
+        return False
+    
+    def verify_existing_password(self):
+        """Verify existing password with 3 attempts limit"""
+        attempts = 0
+        max_attempts = 3
+        
+        while attempts < max_attempts:
+            dialog = PasswordDialog(self, mode="verify", attempts=attempts+1)
+            if dialog.exec_() != QDialog.Accepted:
+                return False
+            
+            password = dialog.get_password()
+            if self.check_password_hash(password):
+                return True
+            
+            attempts += 1
+            if attempts < max_attempts:
+                QMessageBox.warning(self, "Incorrect Password", 
+                                  f"Incorrect password. {max_attempts - attempts} attempts remaining.")
+            else:
+                # Maximum attempts reached - delete everything
+                self.delete_all_data()
+                QMessageBox.critical(self, "Access Denied", 
+                                   "Maximum password attempts exceeded. Application will close.")
+                return False
+        
+        return False
+    
+    def save_password_hash(self, password):
+        """Save password hash securely"""
+        try:
+            import hashlib
+            import os
+            
+            # Create a salt and hash the password
+            salt = os.urandom(32)
+            password_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
+            
+            # Save salt + hash to file
+            password_file = os.path.join(self.settings_manager.parent.journal_dir, "auth.enc")
+            with open(password_file, 'wb') as f:
+                f.write(salt + password_hash)
+            
+            return True
+        except Exception as e:
+            print(f"Error saving password: {e}")
+            return False
+    
+    def check_password_hash(self, password):
+        """Check password against stored hash"""
+        try:
+            import hashlib
+            import os
+            
+            password_file = os.path.join(self.settings_manager.parent.journal_dir, "auth.enc")
+            if not os.path.exists(password_file):
+                return False
+            
+            with open(password_file, 'rb') as f:
+                stored_data = f.read()
+            
+            # Extract salt and hash
+            salt = stored_data[:32]
+            stored_hash = stored_data[32:]
+            
+            # Hash the provided password with the stored salt
+            password_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
+            
+            return password_hash == stored_hash
+        except Exception as e:
+            print(f"Error checking password: {e}")
+            return False
+    
+    def delete_all_data(self):
+        """Delete all journal data after failed authentication"""
+        try:
+            import shutil
+            import os
+            
+            # Remove the entire journal directory
+            if os.path.exists(self.settings_manager.parent.journal_dir):
+                shutil.rmtree(self.settings_manager.parent.journal_dir)
+            
+        except Exception as e:
+            print(f"Error deleting data: {e}")
         
     def initUI(self):
         # Central widget with splitter
