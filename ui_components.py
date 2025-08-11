@@ -14,41 +14,72 @@ class UIComponents:
 
     def create_left_panel(self):
         panel = QFrame()
+        panel.setObjectName("leftPanel")
         panel.setFrameStyle(QFrame.StyledPanel)
-        panel.setMinimumWidth(350)
-        panel.setMaximumWidth(500)
+        panel.setMinimumWidth(300)
+        panel.setMaximumWidth(450)
         
         layout = QVBoxLayout(panel)
-        layout.setSpacing(10)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(0)
+        layout.setContentsMargins(0, 0, 0, 0)
         
-        # Title
-        title = QLabel("📔 SecureJournal Pro")
-        title.setFont(QFont("Segoe UI", 24, QFont.Bold))
+        # Header section
+        header_section = QFrame()
+        header_section.setStyleSheet("background-color: #6366f1; border: none; border-radius: 0;")
+        header_section.setFixedHeight(80)
+        
+        header_layout = QVBoxLayout(header_section)
+        header_layout.setContentsMargins(20, 15, 20, 15)
+        header_layout.setAlignment(Qt.AlignCenter)
+        
+        # App title with Evernote-style elephant icon representation
+        title = QLabel("🐘 SecureJournal")
+        title.setFont(QFont("Segoe UI", 20, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
+        title.setStyleSheet("color: #ffffff; background: transparent;")
+        
+        subtitle = QLabel("Your thoughts, secured")
+        subtitle.setFont(QFont("Segoe UI", 10))
+        subtitle.setAlignment(Qt.AlignCenter)
+        subtitle.setStyleSheet("color: rgba(255, 255, 255, 0.8); background: transparent;")
+        
+        header_layout.addWidget(title)
+        header_layout.addWidget(subtitle)
+        layout.addWidget(header_section)
+        
+        # Main content area - Changed to dark background
+        content_area = QFrame()
+        content_area.setStyleSheet("background-color: #252525; border: none;")  # Changed from #f8f8f8 to dark
+        content_layout = QVBoxLayout(content_area)
+        content_layout.setContentsMargins(15, 15, 15, 15)
+        content_layout.setSpacing(20)
         
         # Create a splitter for notebooks and entries
         self.parent.left_splitter = QSplitter(Qt.Vertical)
         
         # Notebooks section
         notebooks_widget = QWidget()
+        notebooks_widget.setStyleSheet("background-color: #2b2b2b; border-radius: 8px;")  # Dark background
         notebooks_layout = QVBoxLayout(notebooks_widget)
-        notebooks_layout.setContentsMargins(0, 0, 0, 0)
-        notebooks_layout.setSpacing(5)
+        notebooks_layout.setContentsMargins(15, 15, 15, 15)  # Add padding
+        notebooks_layout.setSpacing(8)
         
         # Notebooks header
         notebooks_header = QFrame()
+        notebooks_header.setStyleSheet("background: transparent; border: none;")
         notebooks_header_layout = QHBoxLayout(notebooks_header)
-        notebooks_header_layout.setContentsMargins(0, 0, 0, 0)
+        notebooks_header_layout.setContentsMargins(0, 0, 0, 10)
         
-        notebooks_label = QLabel("Notebooks")
-        notebooks_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        notebooks_label = QLabel("NOTEBOOKS")
+        notebooks_label.setObjectName("sectionHeader")
+        notebooks_label.setFont(QFont("Segoe UI", 14, QFont.Bold))  # Increased from 12 to 14
+        notebooks_label.setStyleSheet("color: #c7d2fe; background: transparent;")  # Changed to lighter purple-blue
         
         self.parent.new_notebook_btn = QPushButton("+")
-        self.parent.new_notebook_btn.setMaximumSize(25, 25)
-        self.parent.new_notebook_btn.setMinimumSize(25, 25)
-        self.parent.new_notebook_btn.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        self.parent.new_notebook_btn.setObjectName("roundButton")
+        self.parent.new_notebook_btn.setMaximumSize(22, 22)
+        self.parent.new_notebook_btn.setMinimumSize(22, 22)
+        self.parent.new_notebook_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
         self.parent.new_notebook_btn.clicked.connect(self.parent.create_notebook)
         
         notebooks_header_layout.addWidget(notebooks_label)
@@ -57,29 +88,36 @@ class UIComponents:
         
         # Notebooks list
         self.parent.notebooks_list = QListWidget()
-        self.parent.notebooks_list.setMinimumHeight(80)
+        self.parent.notebooks_list.setObjectName("notebooksList")
+        self.parent.notebooks_list.setMinimumHeight(100)
+        self.parent.notebooks_list.setMaximumHeight(150)
         
         notebooks_layout.addWidget(notebooks_header)
         notebooks_layout.addWidget(self.parent.notebooks_list)
         
         # Entries section
         entries_widget = QWidget()
+        entries_widget.setStyleSheet("background-color: #2b2b2b; border-radius: 8px;")  # Dark background
         entries_layout = QVBoxLayout(entries_widget)
-        entries_layout.setContentsMargins(0, 0, 0, 0)
-        entries_layout.setSpacing(5)
+        entries_layout.setContentsMargins(15, 15, 15, 15)  # Add padding
+        entries_layout.setSpacing(8)
         
         # Entries header
         entries_header = QFrame()
+        entries_header.setStyleSheet("background: transparent; border: none;")
         entries_header_layout = QHBoxLayout(entries_header)
-        entries_header_layout.setContentsMargins(0, 0, 0, 0)
+        entries_header_layout.setContentsMargins(0, 0, 0, 10)
         
-        entries_label = QLabel("Entries")
-        entries_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        entries_label = QLabel("NOTES")
+        entries_label.setObjectName("sectionHeader")
+        entries_label.setFont(QFont("Segoe UI", 14, QFont.Bold))  # Increased from 12 to 14
+        entries_label.setStyleSheet("color: #c7d2fe; background: transparent;")  # Changed to lighter purple-blue
         
         self.parent.new_entry_btn = QPushButton("+")
-        self.parent.new_entry_btn.setMaximumSize(25, 25)
-        self.parent.new_entry_btn.setMinimumSize(25, 25)
-        self.parent.new_entry_btn.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        self.parent.new_entry_btn.setObjectName("roundButton")
+        self.parent.new_entry_btn.setMaximumSize(22, 22)
+        self.parent.new_entry_btn.setMinimumSize(22, 22)
+        self.parent.new_entry_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
         
         entries_header_layout.addWidget(entries_label)
         entries_header_layout.addStretch()
@@ -87,7 +125,8 @@ class UIComponents:
         
         # Entry list
         self.parent.entry_list = QListWidget()
-        self.parent.entry_list.setMinimumHeight(200)
+        self.parent.entry_list.setObjectName("entriesList")
+        self.parent.entry_list.setMinimumHeight(250)
         
         entries_layout.addWidget(entries_header)
         entries_layout.addWidget(self.parent.entry_list)
@@ -96,36 +135,42 @@ class UIComponents:
         self.parent.left_splitter.addWidget(notebooks_widget)
         self.parent.left_splitter.addWidget(entries_widget)
         
-        # Set initial splitter proportions (notebooks smaller, entries larger)
-        self.parent.left_splitter.setSizes([120, 400])
+        # Set initial splitter proportions
+        self.parent.left_splitter.setSizes([120, 350])
         self.parent.left_splitter.setCollapsible(0, False)
         self.parent.left_splitter.setCollapsible(1, False)
         
-        layout.addWidget(self.parent.left_splitter)
+        content_layout.addWidget(self.parent.left_splitter)
         
         # Storage info section
         storage_frame = QFrame()
+        storage_frame.setObjectName("storageSection")
         storage_layout = QVBoxLayout(storage_frame)
-        storage_layout.setContentsMargins(5, 5, 5, 5)
+        storage_layout.setContentsMargins(12, 10, 12, 10)
+        storage_layout.setSpacing(4)
         
-        storage_label = QLabel("🔒 Secure Storage")
-        storage_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        storage_label = QLabel("SECURE STORAGE")
+        storage_label.setFont(QFont("Segoe UI", 9, QFont.Bold))
+        storage_label.setStyleSheet("color: #9ca3af; background: transparent;")  # Light gray text
         storage_label.setAlignment(Qt.AlignCenter)
         
-        self.parent.storage_info_label = QLabel("Files: 0 • Size: 0 MB")
-        self.parent.storage_info_label.setFont(QFont("Segoe UI", 8))
+        self.parent.storage_info_label = QLabel("0 files • 0 MB")
+        self.parent.storage_info_label.setObjectName("storageInfo")
+        self.parent.storage_info_label.setFont(QFont("Segoe UI", 9))
         self.parent.storage_info_label.setAlignment(Qt.AlignCenter)
-        self.parent.storage_info_label.setStyleSheet("color: #888;")
         
         storage_layout.addWidget(storage_label)
         storage_layout.addWidget(self.parent.storage_info_label)
-        layout.addWidget(storage_frame)
+        content_layout.addWidget(storage_frame)
         
-        # Bottom lock button
+        # Bottom action button
         self.parent.lock_btn = QPushButton("🔒 Lock & Exit")
-        self.parent.lock_btn.setMinimumHeight(40)
-        self.parent.lock_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        layout.addWidget(self.parent.lock_btn)
+        self.parent.lock_btn.setObjectName("lockButton")
+        self.parent.lock_btn.setMinimumHeight(45)
+        self.parent.lock_btn.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        content_layout.addWidget(self.parent.lock_btn)
+        
+        layout.addWidget(content_area, 1)
         
         # Connect events
         self.parent.new_notebook_btn.clicked.connect(self.parent.create_notebook)
@@ -142,104 +187,116 @@ class UIComponents:
     def create_right_panel(self):
         panel = QFrame()
         panel.setFrameStyle(QFrame.StyledPanel)
+        panel.setStyleSheet("background-color: #1a1a1a; border: none;")  # Changed from white to dark
         
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         
-        # Word-like formatting toolbar
+        # Evernote-style formatting toolbar
         formatting_toolbar = self.create_formatting_toolbar()
         layout.addWidget(formatting_toolbar)
         
-        # Single writing container for both title and editor
+        # Main writing area
         writing_container = QFrame()
         writing_container.setObjectName("writingContainer")
         container_layout = QVBoxLayout(writing_container)
-        container_layout.setContentsMargins(15, 15, 15, 15)
-        container_layout.setSpacing(10)
+        container_layout.setContentsMargins(20, 20, 20, 15)
+        container_layout.setSpacing(15)
         
-        # Title section with toggle button
-        title_frame = QFrame()
-        title_layout = QHBoxLayout(title_frame)
+        # Title and actions bar
+        title_section = QFrame()
+        title_section.setStyleSheet("background: transparent; border: none;")
+        title_layout = QHBoxLayout(title_section)
         title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(15)
         
-        # Toggle button on the left
-        self.parent.toggle_btn = QPushButton("◀")
-        self.parent.toggle_btn.setMaximumSize(25, 25)
-        self.parent.toggle_btn.setMinimumSize(25, 25)
-        self.parent.toggle_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        # Toggle button
+        self.parent.toggle_btn = QPushButton("‹")
+        self.parent.toggle_btn.setObjectName("toggleButton")
+        self.parent.toggle_btn.setMaximumSize(28, 28)
+        self.parent.toggle_btn.setMinimumSize(28, 28)
+        self.parent.toggle_btn.setFont(QFont("Segoe UI", 14, QFont.Bold))
         self.parent.toggle_btn.clicked.connect(self.parent.toggle_left_panel)
         
+        # Title input
         self.parent.entry_title = QLineEdit()
-        self.parent.entry_title.setPlaceholderText("Enter your entry title...")
-        self.parent.entry_title.setFont(QFont("Segoe UI", 16, QFont.Bold))
-        self.parent.entry_title.setMinimumHeight(45)
         self.parent.entry_title.setObjectName("entryTitle")
+        self.parent.entry_title.setPlaceholderText("Untitled")
+        self.parent.entry_title.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        self.parent.entry_title.setMinimumHeight(50)
+        
+        # Action buttons section
+        actions_section = QFrame()
+        actions_section.setStyleSheet("background: transparent; border: none;")
+        actions_layout = QHBoxLayout(actions_section)
+        actions_layout.setContentsMargins(0, 0, 0, 0)
+        actions_layout.setSpacing(10)
+        
+        # Date label
+        self.parent.date_label = QLabel(datetime.now().strftime("%B %d, %Y"))
+        self.parent.date_label.setObjectName("dateLabel")
+        self.parent.date_label.setFont(QFont("Segoe UI", 11))
+        
+        # Action buttons
+        self.parent.save_btn = QPushButton("Save")
+        self.parent.save_btn.setMinimumSize(70, 32)
+        self.parent.save_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        
+        self.parent.delete_btn = QPushButton("Delete")
+        self.parent.delete_btn.setObjectName("deleteButton")
+        self.parent.delete_btn.setMinimumSize(70, 32)
+        self.parent.delete_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        
+        actions_layout.addWidget(self.parent.date_label)
+        actions_layout.addStretch()
+        actions_layout.addWidget(self.parent.save_btn)
+        actions_layout.addWidget(self.parent.delete_btn)
         
         title_layout.addWidget(self.parent.toggle_btn)
         title_layout.addWidget(self.parent.entry_title, 1)
+        title_layout.addWidget(actions_section)
         
-        # Action buttons
-        buttons_frame = QFrame()
-        buttons_layout = QHBoxLayout(buttons_frame)
-        buttons_layout.setContentsMargins(0, 0, 0, 0)
-        buttons_layout.setSpacing(15)
+        container_layout.addWidget(title_section)
         
-        self.parent.save_btn = QPushButton("💾 Save")
-        self.parent.save_btn.setMinimumSize(80, 35)
-        self.parent.save_btn.setToolTip("Save Entry")
-        
-        self.parent.delete_btn = QPushButton("🗑️ Delete")
-        self.parent.delete_btn.setMinimumSize(80, 35)
-        self.parent.delete_btn.setToolTip("Delete Entry")
-        
-        self.parent.date_label = QLabel(datetime.now().strftime("%B %d, %Y"))
-        self.parent.date_label.setFont(QFont("Segoe UI", 12))
-        self.parent.date_label.setAlignment(Qt.AlignCenter)
-        self.parent.date_label.setMinimumWidth(120)
-        
-        buttons_layout.addWidget(self.parent.date_label)
-        buttons_layout.addWidget(self.parent.save_btn)
-        buttons_layout.addWidget(self.parent.delete_btn)
-        
-        title_layout.addWidget(buttons_frame)
-        container_layout.addWidget(title_frame)
-        
-        # Editor - Use QTextEdit for rich text support
+        # Editor
         self.parent.editor = QTextEdit()
-        self.parent.editor.setFont(QFont("Segoe UI", self.parent.config["font_size"]))
-        self.parent.editor.setPlaceholderText("Start writing your thoughts here...")
-        self.parent.editor.setLineWrapMode(QTextEdit.WidgetWidth if self.parent.config["word_wrap"] else QTextEdit.NoWrap)
         self.parent.editor.setObjectName("mainEditor")
-        self.parent.editor.setAcceptRichText(True)  # Enable rich text support for images
-        container_layout.addWidget(self.parent.editor, 1)
+        self.parent.editor.setFont(QFont("Segoe UI", self.parent.config["font_size"]))
+        self.parent.editor.setPlaceholderText("Start writing...")
+        self.parent.editor.setLineWrapMode(QTextEdit.WidgetWidth if self.parent.config["word_wrap"] else QTextEdit.NoWrap)
+        self.parent.editor.setAcceptRichText(True)
         
+        container_layout.addWidget(self.parent.editor, 1)
         layout.addWidget(writing_container, 1)
         
-        # Bottom info bar
-        info_frame = QFrame()
-        info_layout = QHBoxLayout(info_frame)
-        info_layout.setContentsMargins(10, 10, 10, 5)
+        # Bottom status bar - Changed to dark theme
+        status_section = QFrame()
+        status_section.setStyleSheet("background-color: #2b2b2b; border-top: 1px solid #404040; border-radius: 0;")  # Dark theme
+        status_layout = QHBoxLayout(status_section)
+        status_layout.setContentsMargins(20, 8, 20, 8)
+        status_layout.setSpacing(20)
         
-        self.parent.word_count_label = QLabel("Words: 0")
-        self.parent.char_count_label = QLabel("Characters: 0")
+        # Word and character counts
+        self.parent.word_count_label = QLabel("0 words")
+        self.parent.word_count_label.setObjectName("countLabel")
+        self.parent.word_count_label.setFont(QFont("Segoe UI", 10))
         
-        # Center container for word/char counts
-        center_frame = QFrame()
-        center_layout = QHBoxLayout(center_frame)
-        center_layout.setContentsMargins(0, 0, 0, 0)
-        center_layout.setSpacing(20)
-        center_layout.addWidget(self.parent.word_count_label)
-        center_layout.addWidget(self.parent.char_count_label)
+        self.parent.char_count_label = QLabel("0 characters")
+        self.parent.char_count_label.setObjectName("countLabel")
+        self.parent.char_count_label.setFont(QFont("Segoe UI", 10))
         
-        self.parent.last_saved_label = QLabel("Unsaved")
+        # Save status
+        self.parent.last_saved_label = QLabel("Not saved")
+        self.parent.last_saved_label.setObjectName("saveStatus")
+        self.parent.last_saved_label.setFont(QFont("Segoe UI", 10))
         
-        info_layout.addStretch()
-        info_layout.addWidget(center_frame)
-        info_layout.addStretch()
-        info_layout.addWidget(self.parent.last_saved_label)
+        status_layout.addWidget(self.parent.word_count_label)
+        status_layout.addWidget(self.parent.char_count_label)
+        status_layout.addStretch()
+        status_layout.addWidget(self.parent.last_saved_label)
         
-        layout.addWidget(info_frame)
+        layout.addWidget(status_section)
         
         # Connect editor events
         self.parent.editor.textChanged.connect(self.parent.on_text_changed)
@@ -265,12 +322,14 @@ class UIComponents:
         toolbar = QToolBar()
         self.parent.addToolBar(toolbar)
         
-        # Font size actions with white text
-        decrease_font = QAction("A-", self.parent)
+        # Font size actions
+        decrease_font = QAction("A−", self.parent)
+        decrease_font.setToolTip("Decrease Font Size")
         decrease_font.triggered.connect(self.parent.decrease_font_size)
         toolbar.addAction(decrease_font)
         
         increase_font = QAction("A+", self.parent)
+        increase_font.setToolTip("Increase Font Size")
         increase_font.triggered.connect(self.parent.increase_font_size)
         toolbar.addAction(increase_font)
         
@@ -286,59 +345,34 @@ class UIComponents:
         toolbar.addSeparator()
         
         # Storage management actions
-        storage_stats = QAction("Storage Stats", self.parent)
+        storage_stats = QAction("Storage Info", self.parent)
+        storage_stats.setToolTip("View Storage Statistics")
         storage_stats.triggered.connect(self.parent.show_storage_stats)
         toolbar.addAction(storage_stats)
         
-        cleanup_storage = QAction("Cleanup Storage", self.parent)
+        cleanup_storage = QAction("Cleanup", self.parent)
+        cleanup_storage.setToolTip("Cleanup Unused Files")
         cleanup_storage.triggered.connect(self.parent.cleanup_storage)
         toolbar.addAction(cleanup_storage)
-        
-        # Style the toolbar actions to have white text
-        toolbar.setStyleSheet("""
-            QToolBar {
-                background-color: #2d2d2d;
-                border: none;
-                spacing: 3px;
-                padding: 5px;
-            }
-            QToolBar QToolButton {
-                color: #ffffff;
-                background-color: #404040;
-                border: 1px solid #555;
-                border-radius: 4px;
-                padding: 4px 8px;
-                margin: 2px;
-            }
-            QToolBar QToolButton:hover {
-                background-color: #4a4a4a;
-                border-color: #6b7280;
-            }
-            QToolBar QToolButton:pressed {
-                background-color: #333;
-            }
-            QToolBar QToolButton:checked {
-                background-color: #6b7280;
-                border-color: #7c8590;
-            }
-        """)
 
     def create_formatting_toolbar(self):
         toolbar = QFrame()
         toolbar.setObjectName("formattingToolbar")
-        toolbar.setMinimumHeight(50)
+        toolbar.setFixedHeight(50)
         layout = QHBoxLayout(toolbar)
-        layout.setContentsMargins(10, 5, 10, 5)
-        layout.setSpacing(5)
+        layout.setContentsMargins(15, 8, 15, 8)
+        layout.setSpacing(8)
         
         # Undo/Redo
-        self.parent.undo_btn = QPushButton("↶")
-        self.parent.undo_btn.setMinimumSize(30, 30)
+        self.parent.undo_btn = QPushButton("⟲")
+        self.parent.undo_btn.setProperty("class", "formatting")
+        self.parent.undo_btn.setMinimumSize(32, 32)
         self.parent.undo_btn.setToolTip("Undo")
         self.parent.undo_btn.clicked.connect(lambda: self.parent.editor.undo())
         
-        self.parent.redo_btn = QPushButton("↷")
-        self.parent.redo_btn.setMinimumSize(30, 30)
+        self.parent.redo_btn = QPushButton("⟳")
+        self.parent.redo_btn.setProperty("class", "formatting")
+        self.parent.redo_btn.setMinimumSize(32, 32)
         self.parent.redo_btn.setToolTip("Redo")
         self.parent.redo_btn.clicked.connect(lambda: self.parent.editor.redo())
         
@@ -346,41 +380,52 @@ class UIComponents:
         layout.addWidget(self.parent.redo_btn)
         layout.addWidget(self.create_separator())
         
-        # Font family
+        # Font family dropdown
         self.parent.font_combo = QComboBox()
-        self.parent.font_combo.setMinimumWidth(120)
-        self.parent.font_combo.addItems(["Segoe UI", "Arial", "Times New Roman", "Calibri", "Verdana", "Georgia"])
+        self.parent.font_combo.setMinimumWidth(140)
+        self.parent.font_combo.setMaximumWidth(140)
+        self.parent.font_combo.addItems([
+            "Segoe UI", "Arial", "Times New Roman", "Calibri", 
+            "Verdana", "Georgia", "Helvetica Neue"
+        ])
         self.parent.font_combo.currentTextChanged.connect(self.parent.change_font_family)
         layout.addWidget(self.parent.font_combo)
         
-        # Font size
+        # Font size spinner
         self.parent.font_size_spin = QSpinBox()
-        self.parent.font_size_spin.setRange(8, 72)
-        self.parent.font_size_spin.setValue(12)
-        self.parent.font_size_spin.setMinimumWidth(60)
+        self.parent.font_size_spin.setRange(8, 48)
+        self.parent.font_size_spin.setValue(14)
+        self.parent.font_size_spin.setMinimumWidth(55)
+        self.parent.font_size_spin.setMaximumWidth(55)
         self.parent.font_size_spin.valueChanged.connect(self.parent.change_font_size)
         layout.addWidget(self.parent.font_size_spin)
         
         layout.addWidget(self.create_separator())
         
-        # Bold, Italic, Underline
+        # Text formatting buttons
         self.parent.bold_btn = QPushButton("B")
-        self.parent.bold_btn.setMinimumSize(30, 30)
-        self.parent.bold_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        self.parent.bold_btn.setProperty("class", "formatting")
+        self.parent.bold_btn.setMinimumSize(32, 32)
+        self.parent.bold_btn.setFont(QFont("Segoe UI", 12, QFont.Bold))
         self.parent.bold_btn.setCheckable(True)
         self.parent.bold_btn.setToolTip("Bold")
         self.parent.bold_btn.clicked.connect(self.parent.toggle_bold)
         
         self.parent.italic_btn = QPushButton("I")
-        self.parent.italic_btn.setMinimumSize(30, 30)
-        self.parent.italic_btn.setFont(QFont("Segoe UI", 10, 75, True))  # Italic
+        self.parent.italic_btn.setProperty("class", "formatting")
+        self.parent.italic_btn.setMinimumSize(32, 32)
+        self.parent.italic_btn.setFont(QFont("Segoe UI", 12, QFont.Normal, True))
         self.parent.italic_btn.setCheckable(True)
         self.parent.italic_btn.setToolTip("Italic")
         self.parent.italic_btn.clicked.connect(self.parent.toggle_italic)
         
         self.parent.underline_btn = QPushButton("U")
-        self.parent.underline_btn.setMinimumSize(30, 30)
-        self.parent.underline_btn.setFont(QFont("Segoe UI", 10))
+        self.parent.underline_btn.setProperty("class", "formatting")
+        self.parent.underline_btn.setMinimumSize(32, 32)
+        self.parent.underline_btn.setFont(QFont("Segoe UI", 12, QFont.Normal))
+        self.parent.underline_btn.setStyleSheet(
+            self.parent.underline_btn.styleSheet() + "text-decoration: underline;"
+        )
         self.parent.underline_btn.setCheckable(True)
         self.parent.underline_btn.setToolTip("Underline")
         self.parent.underline_btn.clicked.connect(self.parent.toggle_underline)
@@ -391,14 +436,16 @@ class UIComponents:
         
         layout.addWidget(self.create_separator())
         
-        # Lists
-        self.parent.bullet_btn = QPushButton("•")
-        self.parent.bullet_btn.setMinimumSize(30, 30)
+        # List buttons
+        self.parent.bullet_btn = QPushButton("• ‥")
+        self.parent.bullet_btn.setProperty("class", "formatting")
+        self.parent.bullet_btn.setMinimumSize(40, 32)
         self.parent.bullet_btn.setToolTip("Bullet List")
         self.parent.bullet_btn.clicked.connect(self.parent.insert_bullet_list)
         
-        self.parent.number_btn = QPushButton("1.")
-        self.parent.number_btn.setMinimumSize(30, 30)
+        self.parent.number_btn = QPushButton("1. 2.")
+        self.parent.number_btn.setProperty("class", "formatting")
+        self.parent.number_btn.setMinimumSize(40, 32)
         self.parent.number_btn.setToolTip("Numbered List")
         self.parent.number_btn.clicked.connect(self.parent.insert_numbered_list)
         
@@ -407,15 +454,18 @@ class UIComponents:
         
         layout.addWidget(self.create_separator())
         
-        # Colors
+        # Color buttons
         self.parent.text_color_btn = QPushButton("A")
-        self.parent.text_color_btn.setMinimumSize(30, 30)
+        self.parent.text_color_btn.setProperty("class", "formatting")
+        self.parent.text_color_btn.setMinimumSize(32, 32)
+        self.parent.text_color_btn.setFont(QFont("Segoe UI", 12, QFont.Bold))
         self.parent.text_color_btn.setToolTip("Text Color")
         self.parent.text_color_btn.clicked.connect(self.parent.change_text_color)
         
         self.parent.bg_color_btn = QPushButton("⬛")
-        self.parent.bg_color_btn.setMinimumSize(30, 30)
-        self.parent.bg_color_btn.setToolTip("Background Color")
+        self.parent.bg_color_btn.setProperty("class", "formatting")
+        self.parent.bg_color_btn.setMinimumSize(32, 32)
+        self.parent.bg_color_btn.setToolTip("Highlight Color")
         self.parent.bg_color_btn.clicked.connect(self.parent.change_background_color)
         
         layout.addWidget(self.parent.text_color_btn)
@@ -423,13 +473,16 @@ class UIComponents:
         
         layout.addWidget(self.create_separator())
         
-        # Image insertion
-        self.parent.insert_image_btn = QPushButton("🖼️")
-        self.parent.insert_image_btn.setMinimumSize(35, 30)
+        # Media insertion
+        self.parent.insert_image_btn = QPushButton("🖼")
+        self.parent.insert_image_btn.setProperty("class", "formatting")
+        self.parent.insert_image_btn.setMinimumSize(38, 32)
+        self.parent.insert_image_btn.setFont(QFont("Segoe UI", 12))
         self.parent.insert_image_btn.setToolTip("Insert Image")
         self.parent.insert_image_btn.clicked.connect(self.parent.insert_image)
         layout.addWidget(self.parent.insert_image_btn)
         
+        # Spacer to push everything to the left
         layout.addStretch()
         
         return toolbar
@@ -438,7 +491,8 @@ class UIComponents:
         separator = QFrame()
         separator.setFrameShape(QFrame.VLine)
         separator.setFrameShadow(QFrame.Sunken)
-        separator.setMaximumHeight(25)
+        separator.setMaximumHeight(28)
+        separator.setStyleSheet("color: #555555; background-color: #555555; margin: 2px;")  # Dark separator
         return separator
     
     def update_storage_info(self, stats):
@@ -446,9 +500,18 @@ class UIComponents:
         try:
             files = stats.get("virtual_files", 0)
             size_mb = stats.get("total_size_mb", 0.0)
-            self.parent.storage_info_label.setText(f"Files: {files} • Size: {size_mb} MB")
+            
+            # Format the display text
+            if files == 0:
+                display_text = "No files stored"
+            elif files == 1:
+                display_text = f"1 file • {size_mb} MB"
+            else:
+                display_text = f"{files} files • {size_mb} MB"
+            
+            self.parent.storage_info_label.setText(display_text)
         except Exception:
-            self.parent.storage_info_label.setText("Files: - • Size: - MB")
+            self.parent.storage_info_label.setText("Storage info unavailable")
     
     def update_notebooks_with_counts(self, notebooks_data):
         """Update the notebooks list with entry counts"""
@@ -459,16 +522,30 @@ class UIComponents:
             notebook_name = notebook_info['name']
             entry_count = notebook_info['count']
             
-            # Main notebook name in larger font
-            main_text = notebook_name
-            # Count in smaller, muted font
-            count_text = f"  ({entry_count} entries)" if entry_count != 1 else f"  ({entry_count} entry)"
+            # Format the display text
+            if entry_count == 0:
+                display_text = f"{notebook_name}"
+                subtitle = "Empty"
+            elif entry_count == 1:
+                display_text = f"{notebook_name}"
+                subtitle = "1 note"
+            else:
+                display_text = f"{notebook_name}"
+                subtitle = f"{entry_count} notes"
             
-            # Set the main text
-            item.setText(main_text + count_text)
+            # Create a rich text format for the item
+            item_text = f"{display_text}\n{subtitle}"
+            item.setText(item_text)
             
-            # Style the item to show count in smaller font
-            item.setData(Qt.UserRole, notebook_name)  # Store actual name for selection
+            # Store the actual notebook name for selection logic
+            item.setData(Qt.UserRole, notebook_name)
+            
+            # Add special styling for the default notebook
+            if notebook_name == "Default":
+                item.setFont(QFont("Segoe UI", 11, QFont.Bold))
+            else:
+                item.setFont(QFont("Segoe UI", 11))
+            
             self.parent.notebooks_list.addItem(item)
         
         # Select current notebook

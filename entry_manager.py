@@ -51,8 +51,9 @@ class EntryManager:
         
         try:
             # Generate virtual file path
-            date_str = datetime.now().strftime("%Y-%m-%d")
-            timestamp = datetime.now().strftime("%H%M%S")
+            now = datetime.now()  # Use a single datetime instance
+            date_str = now.strftime("%Y-%m-%d")
+            timestamp = now.strftime("%H%M%S")
             safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).strip()
             safe_title = safe_title.replace(' ', '_')[:50]
             
@@ -71,8 +72,8 @@ class EntryManager:
                 "title": title,
                 "content": content,
                 "plain_text": self.parent.editor.toPlainText(),  # For word count and search
-                "date": datetime.now().strftime("%Y-%m-%d"),
-                "created_time": datetime.now().isoformat(),
+                "date": date_str,
+                "created_time": now.isoformat(),
                 "word_count": len(self.parent.editor.toPlainText().split()),
                 "has_images": self._has_images(content),
                 "notebook": self.parent.current_notebook
@@ -83,7 +84,14 @@ class EntryManager:
             
             self.parent.current_entry_path = virtual_path
             self.parent.unsaved_changes = False
-            self.parent.last_saved_label.setText(f"Saved at {datetime.now().strftime('%H:%M:%S')}")
+            
+            # Store the save time for status display
+            self.parent.last_save_time = now
+            
+            # Update status with save time
+            save_time_str = now.strftime("%H:%M:%S")
+            self.parent.last_saved_label.setText(f"Saved at {save_time_str}")
+            
             self.parent.status_bar.showMessage("Entry saved successfully!", 3000)
             self.load_recent_entries()
             

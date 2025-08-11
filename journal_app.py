@@ -315,18 +315,48 @@ Note: All files and folder names are encrypted and secure."""
         self.update_status()
     
     def update_status(self):
+        """Update word count, character count, and save status with Evernote styling"""
         text = self.editor.toPlainText()
         word_count = len(text.split()) if text.strip() else 0
         char_count = len(text)
         
-        self.word_count_label.setText(f"Words: {word_count}")
-        self.char_count_label.setText(f"Characters: {char_count}")
-        
-        if self.unsaved_changes:
-            self.last_saved_label.setText("● Unsaved")
-            self.last_saved_label.setStyleSheet("color: #ff6b6b;")
+        # Format counts in a more Evernote-like way
+        if word_count == 0:
+            word_text = "No words"
+        elif word_count == 1:
+            word_text = "1 word"
         else:
-            self.last_saved_label.setStyleSheet("color: #51cf66;")
+            word_text = f"{word_count:,} words"
+        
+        if char_count == 0:
+            char_text = "No characters"
+        elif char_count == 1:
+            char_text = "1 character"
+        else:
+            char_text = f"{char_count:,} characters"
+        
+        self.word_count_label.setText(word_text)
+        self.char_count_label.setText(char_text)
+        
+        # Update save status with appropriate styling
+        if self.unsaved_changes:
+            self.last_saved_label.setText("Unsaved changes")
+            self.last_saved_label.setProperty("saved", "false")
+            # Apply red color for unsaved
+            self.last_saved_label.setStyleSheet("color: #e74c3c; font-weight: bold;")
+        else:
+            if hasattr(self, 'last_save_time'):
+                self.last_saved_label.setText(f"Saved")
+            else:
+                self.last_saved_label.setText("No changes")
+            
+            self.last_saved_label.setProperty("saved", "true")
+            # Apply green color for saved
+            self.last_saved_label.setStyleSheet("color: #2dbe60; font-weight: bold;")
+        
+        # Force style refresh
+        self.last_saved_label.style().unpolish(self.last_saved_label)
+        self.last_saved_label.style().polish(self.last_saved_label)
     
     def auto_save(self):
         if self.unsaved_changes and self.entry_title.text().strip() and self.editor.toPlainText().strip():
