@@ -1,12 +1,160 @@
 import os
 import json
 import base64
+import re
 from datetime import datetime, timedelta
-from PyQt5.QtWidgets import QMessageBox, QListWidgetItem, QFileDialog, QInputDialog
+from PyQt5.QtWidgets import QMessageBox, QListWidgetItem, QFileDialog, QInputDialog, QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QSlider, QCheckBox
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QTextCursor
 from journal_entry import JournalEntry
 from secure_storage_manager import SecureStorageManager
+
+
+class ImageResizeDialog(QDialog):
+    def __init__(self, parent=None, current_size=(600, 400)):
+        super().__init__(parent)
+        self.setWindowTitle("Resize Image")
+        self.setModal(True)
+        self.resize(400, 200)
+        
+        # Current image dimensions
+        self.original_width = current_size[0]
+        self.original_height = current_size[1]
+        self.aspect_ratio = self.original_width / self.original_height
+        
+        layout = QVBoxLayout(self)
+        
+        # Size info
+        info_label = QLabel(f"Original size: {self.original_width} × {self.original_height} px")
+        layout.addWidget(info_label)
+        
+        # Size presets
+        presets_layout = QHBoxLayout()
+        
+        small_btn = QPushButton("Small (300px)")
+        small_btn.clicked.connect(lambda: self.set_width(300))
+        
+        medium_btn = QPushButton("Medium (600px)")
+        medium_btn.clicked.connect(lambda: self.set_width(600))
+        
+        large_btn = QPushButton("Large (900px)")
+        large_btn.clicked.connect(lambda: self.set_width(900))
+        
+        original_btn = QPushButton("Original")
+        original_btn.clicked.connect(lambda: self.set_width(self.original_width))
+        
+        presets_layout.addWidget(small_btn)
+        presets_layout.addWidget(medium_btn)
+        presets_layout.addWidget(large_btn)
+        presets_layout.addWidget(original_btn)
+        
+        layout.addLayout(presets_layout)
+        
+        # Width slider
+        width_layout = QHBoxLayout()
+        width_layout.addWidget(QLabel("Width:"))
+        
+        self.width_slider = QSlider(Qt.Horizontal)
+        self.width_slider.setRange(100, min(1200, self.original_width * 2))
+        self.width_slider.setValue(600)
+        self.width_slider.valueChanged.connect(self.update_size_labels)
+        
+        self.width_label = QLabel("600px")
+        self.width_label.setMinimumWidth(80)
+        
+        width_layout.addWidget(self.width_slider)
+        width_layout.addWidget(self.width_label)
+        layout.addLayout(width_layout)
+        
+        # Height display
+        height_layout = QHBoxLayout()
+        height_layout.addWidget(QLabel("Height:"))
+        self.height_label = QLabel("400px")
+        height_layout.addWidget(self.height_label)
+        height_layout.addStretch()
+        layout.addLayout(height_layout)
+        
+        # Maintain aspect ratio
+        self.maintain_aspect = QCheckBox("Maintain aspect ratio")
+        self.maintain_aspect.setChecked(True)
+        self.maintain_aspect.stateChanged.connect(self.update_size_labels)
+        layout.addWidget(self.maintain_aspect)
+        
+        # Buttons
+        buttons_layout = QHBoxLayout()
+        
+        ok_btn = QPushButton("Apply")
+        ok_btn.clicked.connect(self.accept)
+        
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        
+        buttons_layout.addWidget(ok_btn)
+        buttons_layout.addWidget(cancel_btn)
+        layout.addLayout(buttons_layout)
+        
+        self.update_size_labels()
+        
+        # Apply dark theme
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #2b2b2b;
+                color: #e0e0e0;
+            }
+            QPushButton {
+                background-color: #404040;
+                color: #e0e0e0;
+                border: 1px solid #555;
+                border-radius: 4px;
+                padding: 8px 16px;
+            }
+            QPushButton:hover {
+                background-color: #505050;
+                border-color: #6366f1;
+            }
+            QPushButton:pressed {
+                background-color: #6366f1;
+            }
+            QSlider::groove:horizontal {
+                border: 1px solid #555;
+                height: 4px;
+                background: #333;
+                border-radius: 2px;
+            }
+            QSlider::handle:horizontal {
+                background: #6366f1;
+                border: 1px solid #6366f1;
+                width: 18px;
+                margin: -7px 0;
+                border-radius: 9px;
+            }
+            QCheckBox {
+                color: #e0e0e0;
+            }
+        """)
+    
+    def set_width(self, width):
+        self.width_slider.setValue(width)
+        self.update_size_labels()
+    
+    def update_size_labels(self):
+        width = self.width_slider.value()
+        
+        if self.maintain_aspect.isChecked():
+            height = int(width / self.aspect_ratio)
+        else:
+            height = int(width * 0.75)  # Default 4:3 ratio
+        
+        self.width_label.setText(f"{width}px")
+        self.height_label.setText(f"{height}px")
+    
+    def get_size(self):
+        width = self.width_slider.value()
+        if self.maintain_aspect.isChecked():
+            height = int(width / self.aspect_ratio)
+        else:
+            height = int(width * 0.75)
+        return width, height
 
 
 class EntryManager:
@@ -303,34 +451,17 @@ class EntryManager:
         
         if file_path:
             try:
-                # Ask user for image size
-                size_options = [
-                    ("Small (300px)", 300),
-                    ("Medium (600px)", 600),
-                    ("Large (900px)", 900),
-                    ("Extra Large (1200px)", 1200),
-                    ("Original Size", None)
-                ]
+                # Load image to get dimensions
+                pixmap = QPixmap(file_path)
+                original_width = pixmap.width()
+                original_height = pixmap.height()
                 
-                size_names = [option[0] for option in size_options]
-                size_name, ok = QInputDialog.getItem(
-                    self.parent, 
-                    "Image Size", 
-                    "Choose image size:", 
-                    size_names, 
-                    1,  # Default to Medium
-                    False
-                )
-                
-                if not ok:
+                # Show resize dialog
+                dialog = ImageResizeDialog(self.parent, (original_width, original_height))
+                if dialog.exec_() != QDialog.Accepted:
                     return
                 
-                # Find the selected size
-                max_width = None
-                for option in size_options:
-                    if option[0] == size_name:
-                        max_width = option[1]
-                        break
+                width, height = dialog.get_size()
                 
                 # Read and encode the image
                 with open(file_path, "rb") as img_file:
@@ -347,26 +478,205 @@ class EntryManager:
                 # Create the data URL
                 data_url = f"data:image/{file_ext[1:]};base64,{img_base64}"
                 
-                # Create style string based on size choice
-                if max_width:
-                    style = f"max-width: {max_width}px; height: auto; display: block; margin: 10px auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"
-                else:
-                    style = "height: auto; display: block; margin: 10px auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"
+                # Create comprehensive style string
+                style = (
+                    f"width: {width}px; "
+                    f"height: {height}px; "
+                    f"max-width: 100%; "
+                    f"display: block; "
+                    f"margin: 10px auto; "
+                    f"border-radius: 4px; "
+                    f"box-shadow: 0 2px 8px rgba(0,0,0,0.3); "
+                    f"cursor: pointer; "
+                    f"object-fit: contain;"
+                )
                 
                 # Insert the image into the editor
                 cursor = self.parent.editor.textCursor()
                 
                 # Create an HTML img tag with the embedded image and styling
-                img_html = f'<p><img src="{data_url}" style="{style}" alt="Embedded Image"></p>'
+                img_html = (
+                    f'<p><img src="{data_url}" '
+                    f'style="{style}" '
+                    f'width="{width}" '
+                    f'height="{height}" '
+                    f'alt="Embedded Image" '
+                    f'title="Click and use Ctrl+T to resize" '
+                    f'></p>'
+                )
+                
                 cursor.insertHtml(img_html)
                 
                 # Mark as having unsaved changes
                 self.parent.unsaved_changes = True
                 self.parent.update_status()
-                self.parent.status_bar.showMessage(f"Image inserted successfully at {size_name.lower()}!", 2000)
+                self.parent.status_bar.showMessage(
+                    f"Image inserted at {width}×{height}px! Use Ctrl+T to resize.", 3000
+                )
                 
             except Exception as e:
                 QMessageBox.critical(self.parent, "Image Error", f"Failed to insert image: {str(e)}")
+    
+    def resize_selected_image(self):
+        """Properly resize the currently selected image in the editor"""
+        cursor = self.parent.editor.textCursor()
+        
+        # First, try to find if cursor is inside an image element
+        selected_html = ""
+        image_found = False
+        
+        if cursor.hasSelection():
+            # User has selected text, check if it contains an image
+            selected_html = cursor.selection().toHtml()
+            image_found = "<img" in selected_html.lower()
+        else:
+            # No selection, try to find image at cursor position
+            # Get the entire document HTML and cursor position
+            document = self.parent.editor.document()
+            cursor_position = cursor.position()
+            
+            # Move cursor to find nearby image tags
+            original_position = cursor_position
+            
+            # Search backwards and forwards for image tags
+            test_cursor = QTextCursor(cursor)
+            
+            # Try different selection strategies
+            for _ in range(50):  # Look up to 50 characters in each direction
+                test_cursor.setPosition(max(0, cursor_position - 25))
+                test_cursor.setPosition(min(document.characterCount(), cursor_position + 25), QTextCursor.KeepAnchor)
+                test_html = test_cursor.selection().toHtml()
+                
+                if "<img" in test_html.lower():
+                    cursor = test_cursor
+                    selected_html = test_html
+                    image_found = True
+                    break
+        
+        if not image_found:
+            # Try to select the entire line/paragraph containing cursor
+            cursor.select(QTextCursor.BlockUnderCursor)
+            selected_html = cursor.selection().toHtml()
+            image_found = "<img" in selected_html.lower()
+        
+        if not image_found:
+            QMessageBox.information(
+                self.parent, 
+                "No Image Found", 
+                "No image found at cursor position. To resize an image:\n\n"
+                "1. Click inside an image or select text containing an image\n"
+                "2. Use Ctrl+T or the resize button\n"
+                "3. Or double-click directly on an image"
+            )
+            return
+        
+        # Extract current image dimensions from the HTML
+        current_width, current_height = self._extract_image_dimensions(selected_html)
+        
+        # Show resize dialog with current dimensions
+        dialog = ImageResizeDialog(self.parent, (current_width, current_height))
+        
+        if dialog.exec_() != QDialog.Accepted:
+            return
+        
+        new_width, new_height = dialog.get_size()
+        
+        # Update the image in the HTML
+        updated_html = self._update_image_dimensions(selected_html, new_width, new_height)
+        
+        if updated_html != selected_html:
+            # Replace the selected HTML with updated HTML
+            cursor.removeSelectedText()
+            cursor.insertHtml(updated_html)
+            
+            # Mark as having unsaved changes
+            self.parent.unsaved_changes = True
+            self.parent.update_status()
+            
+            self.parent.status_bar.showMessage(
+                f"Image resized to {new_width}×{new_height}px!", 3000
+            )
+        else:
+            QMessageBox.warning(
+                self.parent, 
+                "Resize Failed", 
+                "Could not resize the image. The image may not have proper formatting."
+            )
+    
+    def _extract_image_dimensions(self, html_content):
+        """Extract width and height from image HTML"""
+        # Default dimensions
+        default_width, default_height = 600, 400
+        
+        # Look for style attribute with width/height
+        style_match = re.search(r'style="([^"]*)"', html_content, re.IGNORECASE)
+        if style_match:
+            style_content = style_match.group(1)
+            
+            # Extract width from style
+            width_match = re.search(r'width:\s*(\d+)px', style_content, re.IGNORECASE)
+            height_match = re.search(r'height:\s*(\d+)px', style_content, re.IGNORECASE)
+            
+            if width_match and height_match:
+                return int(width_match.group(1)), int(height_match.group(1))
+            elif width_match:
+                width = int(width_match.group(1))
+                # Estimate height based on common aspect ratio
+                height = int(width * 0.67)  # 3:2 ratio
+                return width, height
+        
+        # Look for direct width/height attributes
+        width_match = re.search(r'width="(\d+)"', html_content, re.IGNORECASE)
+        height_match = re.search(r'height="(\d+)"', html_content, re.IGNORECASE)
+        
+        if width_match and height_match:
+            return int(width_match.group(1)), int(height_match.group(1))
+        elif width_match:
+            width = int(width_match.group(1))
+            height = int(width * 0.67)
+            return width, height
+        
+        return default_width, default_height
+
+    def _update_image_dimensions(self, html_content, new_width, new_height):
+        """Update the width and height in image HTML"""
+        
+        # Create the new style string
+        new_style_parts = [
+            f"width: {new_width}px",
+            f"height: {new_height}px",
+            "max-width: 100%",
+            "display: block",
+            "margin: 10px auto",
+            "border-radius: 4px",
+            "box-shadow: 0 2px 8px rgba(0,0,0,0.3)",
+            "cursor: pointer"
+        ]
+        new_style = "; ".join(new_style_parts) + ";"
+        
+        # Try to update existing style attribute
+        if 'style="' in html_content:
+            # Replace the existing style attribute
+            updated_html = re.sub(
+                r'style="[^"]*"', 
+                f'style="{new_style}"', 
+                html_content, 
+                flags=re.IGNORECASE
+            )
+        else:
+            # Add style attribute to img tag
+            updated_html = re.sub(
+                r'(<img[^>]*?)(/?>)', 
+                rf'\1 style="{new_style}"\2', 
+                html_content, 
+                flags=re.IGNORECASE
+            )
+        
+        # Also update any direct width/height attributes
+        updated_html = re.sub(r'width="[^"]*"', f'width="{new_width}"', updated_html, flags=re.IGNORECASE)
+        updated_html = re.sub(r'height="[^"]*"', f'height="{new_height}"', updated_html, flags=re.IGNORECASE)
+        
+        return updated_html
     
     def get_storage_stats(self):
         """Get statistics about the secure storage"""

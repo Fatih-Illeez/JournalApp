@@ -2,9 +2,9 @@ from datetime import datetime
 from PyQt5.QtWidgets import (
     QTextEdit, QPushButton, QLabel, QHBoxLayout, QVBoxLayout,
     QListWidget, QFrame, QStatusBar, QToolBar, QAction, QLineEdit, QProgressBar,
-    QSplitter, QWidget, QComboBox, QSpinBox, QColorDialog, QListWidgetItem
+    QSplitter, QWidget, QComboBox, QSpinBox, QColorDialog, QListWidgetItem, QShortcut
 )
-from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QIcon
+from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QIcon, QKeySequence
 from PyQt5.QtCore import Qt
 
 
@@ -275,6 +275,10 @@ class UIComponents:
         self.parent.editor.setLineWrapMode(QTextEdit.WidgetWidth if self.parent.config["word_wrap"] else QTextEdit.NoWrap)
         self.parent.editor.setAcceptRichText(True)
         
+        # Add keyboard shortcut for image resizing
+        resize_shortcut = QShortcut(QKeySequence("Ctrl+T"), self.parent.editor)
+        resize_shortcut.activated.connect(self.parent.entry_manager.resize_selected_image)
+        
         container_layout.addWidget(self.parent.editor, 1)
         layout.addWidget(writing_container, 1)
         
@@ -299,8 +303,14 @@ class UIComponents:
         self.parent.last_saved_label.setObjectName("saveStatus")
         self.parent.last_saved_label.setFont(QFont("Segoe UI", 10))
         
+        # Image resize tip
+        resize_tip_label = QLabel("Ctrl+T: Resize Image")
+        resize_tip_label.setFont(QFont("Segoe UI", 9))
+        resize_tip_label.setStyleSheet("color: #888888;")
+        
         status_layout.addWidget(self.parent.word_count_label)
         status_layout.addWidget(self.parent.char_count_label)
+        status_layout.addWidget(resize_tip_label)
         status_layout.addStretch()
         status_layout.addWidget(self.parent.last_saved_label)
         
@@ -491,6 +501,15 @@ class UIComponents:
         self.parent.insert_image_btn.setToolTip("Insert Image")
         self.parent.insert_image_btn.clicked.connect(self.parent.insert_image)
         layout.addWidget(self.parent.insert_image_btn)
+        
+        # Image resize button - NEW
+        self.parent.resize_image_btn = QPushButton("📐")
+        self.parent.resize_image_btn.setProperty("class", "formatting")
+        self.parent.resize_image_btn.setMinimumSize(42, 36)
+        self.parent.resize_image_btn.setFont(QFont("Segoe UI", 14))
+        self.parent.resize_image_btn.setToolTip("Resize Selected Image (Ctrl+T)")
+        self.parent.resize_image_btn.clicked.connect(self.parent.entry_manager.resize_selected_image)
+        layout.addWidget(self.parent.resize_image_btn)
         
         # Spacer to push everything to the left
         layout.addStretch()

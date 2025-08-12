@@ -14,6 +14,20 @@ class NotebookManager:
         if ok and name.strip():
             notebook_name = name.strip()
             
+            # Check if notebook already exists
+            try:
+                existing_notebooks = []
+                virtual_folders = self.parent.entry_manager.secure_storage.list_virtual_folders()
+                existing_notebooks = [folder.replace("notebooks/", "") for folder in virtual_folders if folder.startswith("notebooks/")]
+                
+                if notebook_name in existing_notebooks:
+                    QMessageBox.warning(self.parent, "Duplicate Notebook", 
+                                      f"A notebook named '{notebook_name}' already exists!")
+                    return
+                
+            except Exception:
+                pass  # Continue if we can't check existing notebooks
+            
             # Create virtual folder in secure storage
             try:
                 virtual_folder_path = f"notebooks/{notebook_name}"
@@ -38,7 +52,19 @@ class NotebookManager:
         try:
             # Get all virtual folders that start with "notebooks/"
             virtual_folders = self.parent.entry_manager.secure_storage.list_virtual_folders()
-            notebook_folders = [folder.replace("notebooks/", "") for folder in virtual_folders if folder.startswith("notebooks/")]
+            notebook_folders = []
+            
+            for folder in virtual_folders:
+                if folder.startswith("notebooks/"):
+                    # Extract just the notebook name, not the full path with dates
+                    notebook_name = folder.replace("notebooks/", "")
+                    # Only take the first part before any slash (to avoid date subfolders)
+                    if "/" in notebook_name:
+                        notebook_name = notebook_name.split("/")[0]
+                    
+                    # Avoid duplicates
+                    if notebook_name and notebook_name not in notebook_folders:
+                        notebook_folders.append(notebook_name)
             
             # Add other notebooks with their counts
             for notebook_name in sorted(notebook_folders):
@@ -62,6 +88,7 @@ class NotebookManager:
         if new_notebook is None:  # Fallback to parsing text
             notebook_text = item.text()
             new_notebook = notebook_text.split('  (')[0]  # Extract name before count
+            new_notebook = notebook_text.split('\n')[0]   # Extract name before subtitle
         
         # Check for unsaved changes before switching
         if self.parent.unsaved_changes:
