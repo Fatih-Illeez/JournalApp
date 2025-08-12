@@ -1,5 +1,5 @@
 def get_app_stylesheet():
-    """Dark mode stylesheet with modern design and improved button hover effects"""
+    """Dark mode stylesheet with modern design - Fixed to remove unsupported CSS properties"""
     return """
         /* Main Window */
         QMainWindow {
@@ -89,7 +89,7 @@ def get_app_stylesheet():
             font-size: 9px;
         }
         
-        /* Buttons - Enhanced with better hover effects */
+        /* Buttons - Enhanced with better hover effects and outlines (CSS3 properties removed) */
         QPushButton {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                        stop: 0 #404040, stop: 1 #2b2b2b);
@@ -106,7 +106,6 @@ def get_app_stylesheet():
                                        stop: 0 #505050, stop: 1 #3a3a3a);
             border: 2px solid #6366f1;
             color: #c7d2fe;
-            transform: translateY(-1px);
         }
         
         QPushButton:pressed {
@@ -114,32 +113,54 @@ def get_app_stylesheet():
                                        stop: 0 #6366f1, stop: 1 #4f46e5);
             color: #ffffff;
             border: 2px solid #4f46e5;
-            transform: translateY(1px);
         }
         
-        /* Save Button - Green with better hover */
+        /* Save Button - Enhanced with stronger outline */
         QPushButton[text="Save"] {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                        stop: 0 #10b981, stop: 1 #059669);
             color: #ffffff;
-            border: 2px solid #059669;
+            border: 3px solid #34d399;
             border-radius: 6px;
             font-weight: bold;
+            min-height: 28px;
         }
         
         QPushButton[text="Save"]:hover {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                        stop: 0 #34d399, stop: 1 #10b981);
-            border: 2px solid #10b981;
+            border: 3px solid #6ee7b7;
             color: #ffffff;
-            transform: translateY(-1px);
         }
         
         QPushButton[text="Save"]:pressed {
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                        stop: 0 #059669, stop: 1 #047857);
-            border: 2px solid #047857;
-            transform: translateY(1px);
+            border: 3px solid #047857;
+        }
+        
+        /* Delete Button - Enhanced with stronger outline */
+        QPushButton[text="Delete"] {
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                       stop: 0 #ef4444, stop: 1 #dc2626);
+            color: #ffffff;
+            border: 3px solid #f87171;
+            border-radius: 6px;
+            font-weight: bold;
+            min-height: 28px;
+        }
+        
+        QPushButton[text="Delete"]:hover {
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                       stop: 0 #f87171, stop: 1 #ef4444);
+            border: 3px solid #fca5a5;
+            color: #ffffff;
+        }
+        
+        QPushButton[text="Delete"]:pressed {
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                       stop: 0 #dc2626, stop: 1 #b91c1c);
+            border: 3px solid #dc2626;
         }
         
         /* Special Button Styles */
@@ -155,13 +176,11 @@ def get_app_stylesheet():
         QPushButton#roundButton:hover {
             background-color: #5b21b6;
             border: 2px solid #5b21b6;
-            transform: scale(1.05);
         }
         
         QPushButton#roundButton:pressed {
             background-color: #4c1d95;
             border: 2px solid #4c1d95;
-            transform: scale(0.95);
         }
         
         QPushButton#toggleButton {
@@ -176,7 +195,6 @@ def get_app_stylesheet():
             background-color: #4a4a4a;
             color: #e0e0e0;
             border: 2px solid #6366f1;
-            transform: scale(1.05);
         }
         
         QPushButton#lockButton {
@@ -192,7 +210,6 @@ def get_app_stylesheet():
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                        stop: 0 #dc2626, stop: 1 #b91c1c);
             border: 2px solid #b91c1c;
-            transform: translateY(-1px);
         }
         
         QPushButton#deleteButton {
@@ -206,10 +223,9 @@ def get_app_stylesheet():
             background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                        stop: 0 #ef4444, stop: 1 #dc2626);
             border: 2px solid #dc2626;
-            transform: translateY(-1px);
         }
         
-        /* Formatting Toolbar Buttons - Enhanced */
+        /* Formatting Toolbar Buttons */
         QPushButton[class="formatting"] {
             background-color: #3a3a3a;
             color: #e0e0e0;
@@ -223,21 +239,18 @@ def get_app_stylesheet():
             background-color: #4a4a4a;
             border: 2px solid #6366f1;
             color: #c7d2fe;
-            transform: translateY(-1px);
         }
         
         QPushButton[class="formatting"]:checked {
             background-color: #6366f1;
             color: #ffffff;
             border: 2px solid #6366f1;
-            transform: translateY(-1px);
         }
         
         QPushButton[class="formatting"]:pressed {
             background-color: #4f46e5;
             color: #ffffff;
             border: 2px solid #4f46e5;
-            transform: translateY(1px);
         }
         
         /* Line Edits */
@@ -252,7 +265,6 @@ def get_app_stylesheet():
         
         QLineEdit:focus {
             border-color: #6366f1;
-            outline: none;
             background-color: #333333;
         }
         
@@ -290,7 +302,6 @@ def get_app_stylesheet():
         
         QTextEdit:focus {
             border: none;
-            outline: none;
             background-color: #1e1e1e;
         }
         
@@ -307,7 +318,6 @@ def get_app_stylesheet():
             border: 1px solid #404040;
             border-radius: 8px;
             padding: 8px;
-            outline: none;
         }
         
         QListWidget::item {
@@ -318,7 +328,6 @@ def get_app_stylesheet():
             margin: 0;
             padding: 12px 16px;
             font-size: 11px;
-            outline: none;
             color: #e0e0e0;
         }
         
@@ -333,12 +342,6 @@ def get_app_stylesheet():
             border-left: 4px solid #6366f1;
             color: #f9fafb;
             font-weight: 500;
-            outline: none;
-        }
-        
-        QListWidget::item:focus {
-            outline: none;
-            border-color: #6366f1;
         }
         
         /* Notebook List Specific */
@@ -352,7 +355,7 @@ def get_app_stylesheet():
         }
         
         QListWidget#notebooksList::item:hover {
-            background-color: rgba(99, 102, 241, 0.1);
+            background-color: #3a3a3a;
             color: #c7d2fe;
             border-left: none;
         }
@@ -426,7 +429,6 @@ def get_app_stylesheet():
             border: 1px solid #555555;
             selection-background-color: #6366f1;
             selection-color: #ffffff;
-            outline: none;
         }
         
         /* Spin Boxes */

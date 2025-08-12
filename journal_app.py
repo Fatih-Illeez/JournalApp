@@ -44,7 +44,10 @@ class EncryptedJournal(QMainWindow):
         # Setup UI
         self.initUI()
         self.setup_auto_save()
-        self.entry_manager.load_recent_entries()
+        
+        # Load data after UI is set up - THIS IS THE KEY FIX
+        self.load_notebooks()  # Load notebooks first
+        self.entry_manager.load_recent_entries()  # Then load entries
         
         # Update initial storage info
         self.update_storage_display()

@@ -107,15 +107,15 @@ def main():
         msg.setText(f"Failed to start SecureJournal:\n{str(e)}")
         msg.setStyleSheet("""
             QMessageBox {
-                background-color: #ffffff;
-                color: #333333;
+                background-color: #2b2b2b;
+                color: #e0e0e0;
             }
             QMessageBox QLabel {
-                color: #333333;
+                color: #e0e0e0;
                 font-size: 12px;
             }
             QMessageBox QPushButton {
-                background-color: #e74c3c;pu
+                background-color: #e74c3c;
                 color: #ffffff;
                 border: none;
                 border-radius: 4px;

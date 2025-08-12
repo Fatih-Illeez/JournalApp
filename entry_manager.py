@@ -2,7 +2,7 @@ import os
 import json
 import base64
 from datetime import datetime, timedelta
-from PyQt5.QtWidgets import QMessageBox, QListWidgetItem, QFileDialog
+from PyQt5.QtWidgets import QMessageBox, QListWidgetItem, QFileDialog, QInputDialog
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from journal_entry import JournalEntry
@@ -94,6 +94,7 @@ class EntryManager:
             
             self.parent.status_bar.showMessage("Entry saved successfully!", 3000)
             self.load_recent_entries()
+            self.parent.notebook_manager.load_notebooks()
             
         except Exception as e:
             QMessageBox.critical(self.parent, "Save Error", f"Failed to save entry: {str(e)}")
@@ -225,6 +226,7 @@ class EntryManager:
                 self.new_entry()
                 self.load_recent_entries()
                 self.parent.status_bar.showMessage("Entry deleted successfully!", 3000)
+                self.parent.notebook_manager.load_notebooks()
             except Exception as e:
                 QMessageBox.critical(self.parent, "Delete Error", f"Failed to delete entry: {str(e)}")
     
@@ -291,7 +293,7 @@ class EntryManager:
                 QMessageBox.critical(self.parent, "Export Error", f"Failed to export journal: {str(e)}")
     
     def insert_image(self):
-        """Insert an image into the current entry"""
+        """Insert an image into the current entry with size options"""
         file_path, _ = QFileDialog.getOpenFileName(
             self.parent, 
             "Insert Image", 
@@ -301,6 +303,35 @@ class EntryManager:
         
         if file_path:
             try:
+                # Ask user for image size
+                size_options = [
+                    ("Small (300px)", 300),
+                    ("Medium (600px)", 600),
+                    ("Large (900px)", 900),
+                    ("Extra Large (1200px)", 1200),
+                    ("Original Size", None)
+                ]
+                
+                size_names = [option[0] for option in size_options]
+                size_name, ok = QInputDialog.getItem(
+                    self.parent, 
+                    "Image Size", 
+                    "Choose image size:", 
+                    size_names, 
+                    1,  # Default to Medium
+                    False
+                )
+                
+                if not ok:
+                    return
+                
+                # Find the selected size
+                max_width = None
+                for option in size_options:
+                    if option[0] == size_name:
+                        max_width = option[1]
+                        break
+                
                 # Read and encode the image
                 with open(file_path, "rb") as img_file:
                     img_data = img_file.read()
@@ -316,17 +347,23 @@ class EntryManager:
                 # Create the data URL
                 data_url = f"data:image/{file_ext[1:]};base64,{img_base64}"
                 
+                # Create style string based on size choice
+                if max_width:
+                    style = f"max-width: {max_width}px; height: auto; display: block; margin: 10px auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"
+                else:
+                    style = "height: auto; display: block; margin: 10px auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"
+                
                 # Insert the image into the editor
                 cursor = self.parent.editor.textCursor()
                 
-                # Create an HTML img tag with the embedded image
-                img_html = f'<img src="{data_url}" style="max-width: 600px; height: auto;" alt="Embedded Image">'
+                # Create an HTML img tag with the embedded image and styling
+                img_html = f'<p><img src="{data_url}" style="{style}" alt="Embedded Image"></p>'
                 cursor.insertHtml(img_html)
                 
                 # Mark as having unsaved changes
                 self.parent.unsaved_changes = True
                 self.parent.update_status()
-                self.parent.status_bar.showMessage("Image inserted successfully!", 2000)
+                self.parent.status_bar.showMessage(f"Image inserted successfully at {size_name.lower()}!", 2000)
                 
             except Exception as e:
                 QMessageBox.critical(self.parent, "Image Error", f"Failed to insert image: {str(e)}")
