@@ -8,6 +8,74 @@ from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QIcon, QKeySequence
 from PyQt5.QtCore import Qt
 
 
+from PyQt5.QtWidgets import QListWidget, QMenu, QAction
+from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QCursor
+
+class EnhancedNotebookListWidget(QListWidget):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
+        
+    def show_context_menu(self, position: QPoint):
+        item = self.itemAt(position)
+        if item is None:
+            return
+            
+        notebook_name = item.data(Qt.UserRole)
+        if notebook_name is None:
+            return
+            
+        # Create context menu
+        context_menu = QMenu(self)
+        context_menu.setStyleSheet("""
+            QMenu {
+                background-color: #2b2b2b;
+                color: #e0e0e0;
+                border: 1px solid #404040;
+                border-radius: 6px;
+                padding: 4px;
+            }
+            QMenu::item {
+                background-color: transparent;
+                padding: 8px 16px;
+                border-radius: 4px;
+                margin: 1px;
+            }
+            QMenu::item:selected {
+                background-color: #404040;
+                color: #c7d2fe;
+            }
+        """)
+        
+        # Add actions
+        manage_action = QAction("⚙️ Manage Notebook", self)
+        manage_action.triggered.connect(lambda: self.parent.show_notebook_context(notebook_name))
+        context_menu.addAction(manage_action)
+        
+        context_menu.addSeparator()
+        
+        export_action = QAction("📤 Export Notebook", self)
+        export_action.triggered.connect(lambda: self.parent.notebook_manager.export_notebook(notebook_name))
+        context_menu.addAction(export_action)
+        
+        if notebook_name != "Default":  # Can't rename/delete default notebook
+            context_menu.addSeparator()
+            
+            rename_action = QAction("✏️ Rename", self)
+            rename_action.triggered.connect(lambda: self.parent.notebook_manager.show_rename_dialog(notebook_name))
+            context_menu.addAction(rename_action)
+            
+            delete_action = QAction("🗑️ Delete", self)
+            delete_action.triggered.connect(lambda: self.parent.notebook_manager.show_delete_dialog(notebook_name))
+            context_menu.addAction(delete_action)
+        
+        # Show menu
+        context_menu.exec_(self.mapToGlobal(position))
+
+
 class UIComponents:
     def __init__(self, parent):
         self.parent = parent
@@ -88,7 +156,7 @@ class UIComponents:
         notebooks_header_layout.addWidget(self.parent.new_notebook_btn)
         
         # Notebooks list
-        self.parent.notebooks_list = QListWidget()
+        self.parent.notebooks_list = EnhancedNotebookListWidget(self.parent)
         self.parent.notebooks_list.setObjectName("notebooksList")
         self.parent.notebooks_list.setMinimumHeight(100)
         

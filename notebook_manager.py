@@ -1,8 +1,9 @@
 import os
 import json
 from datetime import datetime
-from PyQt5.QtWidgets import QInputDialog, QMessageBox, QListWidgetItem
+from PyQt5.QtWidgets import QInputDialog, QMessageBox, QListWidgetItem, QDialog
 from PyQt5.QtCore import Qt
+from notebook_context_dialog import NotebookContextDialog
 
 
 class NotebookManager:
@@ -37,6 +38,151 @@ class NotebookManager:
                 self.load_notebooks()
             except Exception as e:
                 QMessageBox.critical(self.parent, "Error", f"Failed to create notebook: {str(e)}")
+                
+    def show_rename_dialog(self, notebook_name):
+        """Show a quick rename dialog for notebook"""
+        if notebook_name == "Default":
+            QMessageBox.information(self.parent, "Cannot Rename", "The Default notebook cannot be renamed.")
+            return
+            
+        new_name, ok = QInputDialog.getText(
+            self.parent, 
+            f"Rename Notebook: {notebook_name}", 
+            "Enter new name:",
+            text=notebook_name
+        )
+        
+        if ok and new_name.strip() and new_name.strip() != notebook_name:
+            self.rename_notebook(notebook_name, new_name.strip())
+
+    def show_delete_dialog(self, notebook_name):
+        """Show confirmation dialog for notebook deletion"""
+        if notebook_name == "Default":
+            QMessageBox.information(self.parent, "Cannot Delete", "The Default notebook cannot be deleted.")
+            return
+            
+        # Get stats for the confirmation
+        stats = self.get_notebook_stats(notebook_name)
+        
+        reply = QMessageBox.question(
+            self.parent, 
+            "Delete Notebook", 
+            f"Are you sure you want to delete notebook '{notebook_name}'?\n\n"
+            f"This will permanently delete {stats['total_entries']} notes "
+            f"({stats['total_size_mb']} MB) and cannot be undone!\n\n"
+            f"Type the notebook name to confirm:",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            # Additional confirmation by typing the name
+            confirmation_name, ok = QInputDialog.getText(
+                self.parent,
+                "Confirm Deletion",
+                f"Type '{notebook_name}' to confirm deletion:"
+            )
+            
+            if ok and confirmation_name.strip() == notebook_name:
+                self.delete_notebook(notebook_name)
+            elif ok:
+                QMessageBox.warning(self.parent, "Deletion Cancelled", "Notebook name didn't match. Deletion cancelled.")
+
+    def get_notebook_quick_info(self, notebook_name):
+        """Get quick info string for notebook"""
+        try:
+            stats = self.get_notebook_stats(notebook_name)
+            return f"{stats['total_entries']} notes • {stats['total_size_mb']} MB"
+        except Exception:
+            print(f"Error getting quick info for notebook '{notebook_name}'")
+        return "Info unavailable"
+    
+    def show_notebook_context_menu(self, notebook_name):
+        """Show the notebook context dialog with edit/delete/export options"""
+        try:
+            # Get notebook stats
+            notebook_stats = self.get_notebook_stats(notebook_name)
+            
+            # Show context dialog
+            dialog = NotebookContextDialog(self.parent, notebook_name, notebook_stats)
+            if dialog.exec_() == QDialog.Accepted:
+                action, data = dialog.get_result()
+                
+                if action == "rename":
+                    self.rename_notebook(notebook_name, data)
+                elif action == "delete":
+                    self.delete_notebook(notebook_name)
+                elif action == "export":
+                    self.export_notebook(notebook_name)
+                    
+        except Exception as e:
+            QMessageBox.critical(self.parent, "Error", f"Failed to show notebook options: {str(e)}")
+    
+    def rename_notebook(self, old_name, new_name):
+        """Rename a notebook by moving all its entries to a new folder"""
+        if old_name == "Default":
+            QMessageBox.warning(self.parent, "Cannot Rename", "The Default notebook cannot be renamed.")
+            return
+            
+        try:
+            # Get all files in the old notebook
+            old_path_prefix = f"notebooks/{old_name}/"
+            files_to_move = self.parent.entry_manager.secure_storage.list_files(old_path_prefix)
+            
+            # Create new notebook folder
+            new_virtual_folder_path = f"notebooks/{new_name}"
+            self.parent.entry_manager.secure_storage.create_virtual_folder(new_virtual_folder_path)
+            
+            # Move all files to new location
+            moved_count = 0
+            for file_info in files_to_move:
+                old_virtual_path = file_info["virtual_path"]
+                if not old_virtual_path.endswith('.enc'):
+                    continue
+                    
+                # Create new path by replacing the notebook name
+                new_virtual_path = old_virtual_path.replace(f"notebooks/{old_name}/", f"notebooks/{new_name}/")
+                
+                # Load data from old location
+                encrypted_data = self.parent.entry_manager.secure_storage.load_file(old_virtual_path)
+                if encrypted_data is None:
+                    continue
+                
+                # Update the notebook field in the entry data
+                try:
+                    entry_data = json.loads(encrypted_data.decode())
+                    entry_data["notebook"] = new_name
+                    updated_encrypted_data = json.dumps(entry_data).encode()
+                except Exception:
+                    # If we can't parse/update the data, just move it as-is
+                    updated_encrypted_data = encrypted_data
+                
+                # Store in new location
+                if self.parent.entry_manager.secure_storage.store_file(new_virtual_path, updated_encrypted_data):
+                    # Delete from old location
+                    if self.parent.entry_manager.secure_storage.delete_file(old_virtual_path):
+                        moved_count += 1
+            
+            # Delete old folder marker
+            old_folder_marker = f"notebooks/{old_name}/.folder_marker"
+            self.parent.entry_manager.secure_storage.delete_file(old_folder_marker)
+            
+            # Update current notebook if it was the renamed one
+            if self.parent.current_notebook == old_name:
+                self.parent.current_notebook = new_name
+            
+            # Reload everything
+            self.load_notebooks()
+            self.parent.entry_manager.load_recent_entries()
+            
+            QMessageBox.information(
+                self.parent, 
+                "Rename Complete", 
+                f"Notebook '{old_name}' has been renamed to '{new_name}'.\n{moved_count} entries were moved."
+            )
+            
+        except Exception as e:
+            QMessageBox.critical(self.parent, "Rename Error", f"Failed to rename notebook: {str(e)}")
     
     def load_notebooks(self):
         """Load notebooks with entry counts"""
@@ -125,46 +271,38 @@ class NotebookManager:
             QMessageBox.warning(self.parent, "Cannot Delete", "The Default notebook cannot be deleted.")
             return
         
-        reply = QMessageBox.question(
-            self.parent, 
-            "Delete Notebook", 
-            f"Are you sure you want to delete notebook '{notebook_name}' and ALL its entries?\n\nThis action cannot be undone!",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        
-        if reply == QMessageBox.Yes:
-            try:
-                # Get all files in this notebook
-                virtual_path_prefix = f"notebooks/{notebook_name}/"
-                files_to_delete = self.parent.entry_manager.secure_storage.list_files(virtual_path_prefix)
-                
-                # Delete all files
-                deleted_count = 0
-                for file_info in files_to_delete:
-                    virtual_path = file_info["virtual_path"]
-                    if self.parent.entry_manager.secure_storage.delete_file(virtual_path):
-                        deleted_count += 1
-                
-                # Delete the folder marker
-                folder_marker_path = f"notebooks/{notebook_name}/.folder_marker"
-                self.parent.entry_manager.secure_storage.delete_file(folder_marker_path)
-                
-                # Switch to Default notebook if we deleted the current one
-                if self.parent.current_notebook == notebook_name:
-                    self.parent.current_notebook = "Default"
-                    self.parent.new_entry()
-                
-                self.load_notebooks()
-                self.parent.entry_manager.load_recent_entries()
-                
-                QMessageBox.information(
-                    self.parent, 
-                    "Notebook Deleted", 
-                    f"Notebook '{notebook_name}' and {deleted_count} entries have been securely deleted."
-                )
-                
-            except Exception as e:
-                QMessageBox.critical(self.parent, "Delete Error", f"Failed to delete notebook: {str(e)}")
+        try:
+            # Get all files in this notebook
+            virtual_path_prefix = f"notebooks/{notebook_name}/"
+            files_to_delete = self.parent.entry_manager.secure_storage.list_files(virtual_path_prefix)
+            
+            # Delete all files
+            deleted_count = 0
+            for file_info in files_to_delete:
+                virtual_path = file_info["virtual_path"]
+                if self.parent.entry_manager.secure_storage.delete_file(virtual_path):
+                    deleted_count += 1
+            
+            # Delete the folder marker
+            folder_marker_path = f"notebooks/{notebook_name}/.folder_marker"
+            self.parent.entry_manager.secure_storage.delete_file(folder_marker_path)
+            
+            # Switch to Default notebook if we deleted the current one
+            if self.parent.current_notebook == notebook_name:
+                self.parent.current_notebook = "Default"
+                self.parent.new_entry()
+            
+            self.load_notebooks()
+            self.parent.entry_manager.load_recent_entries()
+            
+            QMessageBox.information(
+                self.parent, 
+                "Notebook Deleted", 
+                f"Notebook '{notebook_name}' and {deleted_count} entries have been securely deleted."
+            )
+            
+        except Exception as e:
+            QMessageBox.critical(self.parent, "Delete Error", f"Failed to delete notebook: {str(e)}")
     
     def export_notebook(self, notebook_name):
         """Export a specific notebook"""

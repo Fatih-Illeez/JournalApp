@@ -334,17 +334,28 @@ class EntryManager:
             print(f"Error loading entries: {e}")
     
     def load_selected_entry(self, item):
+        # Check if item is still valid
+        if not item or not item.listWidget():
+            return
+            
         if self.parent.unsaved_changes:
             reply = QMessageBox.question(self.parent, "Unsaved Changes", 
-                                       "You have unsaved changes. Save before switching entries?",
-                                       QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+                                    "You have unsaved changes. Save before switching entries?",
+                                    QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
             if reply == QMessageBox.Yes:
                 self.save_entry()
             elif reply == QMessageBox.Cancel:
                 return
         
-        index = item.data(Qt.UserRole)
-        if 0 <= index < len(self.parent.entries):
+        # Check again after potential save operation
+        if not item or not item.listWidget():
+            return
+            
+        try:
+            index = item.data(Qt.UserRole)
+            if index is None or not (0 <= index < len(self.parent.entries)):
+                return
+                
             entry = self.parent.entries[index]
             self.parent.current_entry = entry
             self.parent.current_entry_path = entry.file_path
@@ -359,6 +370,10 @@ class EntryManager:
             self.parent.date_label.setText(datetime.strptime(entry.date, "%Y-%m-%d").strftime("%B %d, %Y"))
             self.parent.unsaved_changes = False
             self.parent.update_status()
+            
+        except (RuntimeError, AttributeError) as e:
+            print(f"Error loading entry: {e}")
+            return
     
     def delete_entry(self):
         if not self.parent.current_entry_path:

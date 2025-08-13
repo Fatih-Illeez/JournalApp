@@ -11,8 +11,11 @@ from settings_manager import SettingsManager
 from security_manager import SecurityManager
 from calendar_dialog import CalendarDialog
 from password_dialog import PasswordDialog
+from notebook_context_dialog import NotebookContextDialog
 from styles import get_app_stylesheet
 
+from PyQt5.QtWidgets import QShortcut
+from PyQt5.QtGui import QKeySequence
 
 class EncryptedJournal(QMainWindow):
     def __init__(self):
@@ -51,7 +54,21 @@ class EncryptedJournal(QMainWindow):
         
         # Update initial storage info
         self.update_storage_display()
-    
+        
+    def setup_shortcuts(self):
+        """Setup keyboard shortcuts"""
+        # Image resize shortcut
+        resize_shortcut = QShortcut(QKeySequence("Ctrl+T"), self)
+        resize_shortcut.activated.connect(self.entry_manager.resize_selected_image)
+        
+        # Save shortcut
+        save_shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
+        save_shortcut.activated.connect(self.save_entry)
+        
+        # New entry shortcut
+        new_shortcut = QShortcut(QKeySequence("Ctrl+N"), self)
+        new_shortcut.activated.connect(self.new_entry)
+        
     def authenticate_user(self):
         """Authenticate user with password. Delete everything after 3 failed attempts."""
         # Check if password file exists
@@ -189,6 +206,9 @@ class EncryptedJournal(QMainWindow):
         self.splitter.setCollapsible(0, True)
         self.splitter.setCollapsible(1, False)
         
+        # Setup keyboard shortcuts
+        self.setup_shortcuts()
+        
         # Status bar
         self.ui_components.create_status_bar()
         
@@ -286,15 +306,15 @@ class EncryptedJournal(QMainWindow):
                 notebook_stats.append(f"{notebook}: {nb_stats['total_entries']} entries ({nb_stats['total_size_mb']} MB)")
             
             message = f"""Storage Statistics:
-            
-Total Files: {stats['virtual_files']}
-Physical Files: {stats['physical_files']}
-Total Size: {stats['total_size_mb']} MB
+                        
+            Total Files: {stats['virtual_files']}
+            Physical Files: {stats['physical_files']}
+            Total Size: {stats['total_size_mb']} MB
 
-Notebook Breakdown:
-{chr(10).join(notebook_stats)}
+            Notebook Breakdown:
+            {chr(10).join(notebook_stats)}
 
-Note: All files and folder names are encrypted and secure."""
+            Note: All files and folder names are encrypted and secure."""
             
             QMessageBox.information(self, "Storage Statistics", message)
             
@@ -469,3 +489,7 @@ Note: All files and folder names are encrypted and secure."""
                 cursor.mergeCharFormat(format)
             else:
                 self.editor.mergeCurrentCharFormat(format)
+                
+    def show_notebook_context(self, notebook_name):
+            """Show notebook context menu via notebook manager"""
+            self.notebook_manager.show_notebook_context_menu(notebook_name)
