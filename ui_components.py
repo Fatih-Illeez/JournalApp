@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QIcon, QKeySequence
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QFontComboBox, QComboBox, QSpinBox
 
 
 from PyQt5.QtWidgets import QListWidget, QMenu, QAction
@@ -18,6 +19,9 @@ class EnhancedNotebookListWidget(QListWidget):
         self.parent = parent
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
+
+    # Enable smooth scrolling
+
         
     def show_context_menu(self, position: QPoint):
         item = self.itemAt(position)
@@ -159,6 +163,7 @@ class UIComponents:
         self.parent.notebooks_list = EnhancedNotebookListWidget(self.parent)
         self.parent.notebooks_list.setObjectName("notebooksList")
         self.parent.notebooks_list.setMinimumHeight(100)
+
         
         notebooks_layout.addWidget(notebooks_header)
         notebooks_layout.addWidget(self.parent.notebooks_list)
@@ -195,6 +200,7 @@ class UIComponents:
         self.parent.entry_list = QListWidget()
         self.parent.entry_list.setObjectName("entriesList")
         self.parent.entry_list.setMinimumHeight(200)
+
         
         entries_layout.addWidget(entries_header)
         entries_layout.addWidget(self.parent.entry_list)
@@ -335,15 +341,21 @@ class UIComponents:
         
         container_layout.addWidget(title_section)
         
-        # Editor
+        # Editor (single shared QTextEdit owned by the main window)
         self.parent.editor = QTextEdit()
         self.parent.editor.setObjectName("mainEditor")
+        self.parent.editor.setAcceptRichText(True)  # REQUIRED for fonts/styles to work
         self.parent.editor.setFont(QFont("Segoe UI", self.parent.config["font_size"]))
         self.parent.editor.setPlaceholderText("Start writing...")
-        self.parent.editor.setLineWrapMode(QTextEdit.WidgetWidth if self.parent.config["word_wrap"] else QTextEdit.NoWrap)
-        self.parent.editor.setAcceptRichText(True)
-        
-        # Add keyboard shortcut for image resizing
+        self.parent.editor.setLineWrapMode(
+            QTextEdit.WidgetWidth if self.parent.config["word_wrap"] else QTextEdit.NoWrap
+        )
+
+        # Keep toolbar in sync with caret’s formatting
+        # Requires EncryptedJournal to define on_char_format_changed(fmt: QTextCharFormat)
+        self.parent.editor.currentCharFormatChanged.connect(self.parent.on_char_format_changed)
+
+        # Keyboard shortcut for image resizing
         resize_shortcut = QShortcut(QKeySequence("Ctrl+T"), self.parent.editor)
         resize_shortcut.activated.connect(self.parent.entry_manager.resize_selected_image)
         
@@ -384,7 +396,7 @@ class UIComponents:
         
         layout.addWidget(status_section)
         
-        # Connect editor events
+        # Connect editor + title + buttons
         self.parent.editor.textChanged.connect(self.parent.on_text_changed)
         self.parent.entry_title.textChanged.connect(self.parent.on_title_changed)
         self.parent.save_btn.clicked.connect(self.parent.save_entry)
@@ -448,49 +460,50 @@ class UIComponents:
         layout = QHBoxLayout(toolbar)
         layout.setContentsMargins(15, 10, 15, 10)
         layout.setSpacing(10)
-        
-        # Undo/Redo - Enhanced visibility
+
+        # Undo / Redo
         self.parent.undo_btn = QPushButton("⟲")
         self.parent.undo_btn.setProperty("class", "formatting")
         self.parent.undo_btn.setMinimumSize(36, 36)
         self.parent.undo_btn.setFont(QFont("Segoe UI", 14, QFont.Bold))
         self.parent.undo_btn.setToolTip("Undo")
         self.parent.undo_btn.clicked.connect(lambda: self.parent.editor.undo())
-        
+
         self.parent.redo_btn = QPushButton("⟳")
         self.parent.redo_btn.setProperty("class", "formatting")
         self.parent.redo_btn.setMinimumSize(36, 36)
         self.parent.redo_btn.setFont(QFont("Segoe UI", 14, QFont.Bold))
         self.parent.redo_btn.setToolTip("Redo")
         self.parent.redo_btn.clicked.connect(lambda: self.parent.editor.redo())
-        
+
         layout.addWidget(self.parent.undo_btn)
         layout.addWidget(self.parent.redo_btn)
         layout.addWidget(self.create_separator())
-        
-        # Font family dropdown
-        self.parent.font_combo = QComboBox()
-        self.parent.font_combo.setMinimumWidth(140)
-        self.parent.font_combo.setMaximumWidth(140)
-        self.parent.font_combo.addItems([
-            "Segoe UI", "Arial", "Times New Roman", "Calibri", 
-            "Verdana", "Georgia", "Helvetica Neue"
-        ])
-        self.parent.font_combo.currentTextChanged.connect(self.parent.change_font_family)
+
+        # --- Font family (use QFontComboBox so installed fonts show up) ---
+        self.parent.font_combo = QFontComboBox()
+        self.parent.font_combo.setMinimumWidth(160)
+        self.parent.font_combo.setMaximumWidth(200)
+        self.parent.font_combo.setToolTip("Font family")
+        # connect to a slot on the main window (you'll add change_font_family there)
+        self.parent.font_combo.currentFontChanged.connect(self.parent.change_font_family)
         layout.addWidget(self.parent.font_combo)
-        
-        # Font size spinner
+
+        # --- Font size (point size) ---
         self.parent.font_size_spin = QSpinBox()
-        self.parent.font_size_spin.setRange(8, 48)
-        self.parent.font_size_spin.setValue(14)
-        self.parent.font_size_spin.setMinimumWidth(60)
-        self.parent.font_size_spin.setMaximumWidth(60)
+        self.parent.font_size_spin.setRange(8, 72)
+        self.parent.font_size_spin.setSingleStep(1)
+        self.parent.font_size_spin.setValue(14)  # default; will be synced below
+        self.parent.font_size_spin.setMinimumWidth(68)
+        self.parent.font_size_spin.setMaximumWidth(68)
+        self.parent.font_size_spin.setToolTip("Font size (pt)")
+        # connect to a slot on the main window (you'll add change_font_size there)
         self.parent.font_size_spin.valueChanged.connect(self.parent.change_font_size)
         layout.addWidget(self.parent.font_size_spin)
-        
+
         layout.addWidget(self.create_separator())
-        
-        # Text formatting buttons - Enhanced
+
+        # Text formatting: Bold / Italic / Underline
         self.parent.bold_btn = QPushButton("B")
         self.parent.bold_btn.setProperty("class", "formatting")
         self.parent.bold_btn.setMinimumSize(36, 36)
@@ -498,7 +511,7 @@ class UIComponents:
         self.parent.bold_btn.setCheckable(True)
         self.parent.bold_btn.setToolTip("Bold")
         self.parent.bold_btn.clicked.connect(self.parent.toggle_bold)
-        
+
         self.parent.italic_btn = QPushButton("I")
         self.parent.italic_btn.setProperty("class", "formatting")
         self.parent.italic_btn.setMinimumSize(36, 36)
@@ -506,7 +519,7 @@ class UIComponents:
         self.parent.italic_btn.setCheckable(True)
         self.parent.italic_btn.setToolTip("Italic")
         self.parent.italic_btn.clicked.connect(self.parent.toggle_italic)
-        
+
         self.parent.underline_btn = QPushButton("U")
         self.parent.underline_btn.setProperty("class", "formatting")
         self.parent.underline_btn.setMinimumSize(36, 36)
@@ -514,54 +527,54 @@ class UIComponents:
         self.parent.underline_btn.setCheckable(True)
         self.parent.underline_btn.setToolTip("Underline")
         self.parent.underline_btn.clicked.connect(self.parent.toggle_underline)
-        
+
         layout.addWidget(self.parent.bold_btn)
         layout.addWidget(self.parent.italic_btn)
         layout.addWidget(self.parent.underline_btn)
-        
+
         layout.addWidget(self.create_separator())
-        
-        # List buttons - Enhanced
+
+        # Lists
         self.parent.bullet_btn = QPushButton("• ‥")
         self.parent.bullet_btn.setProperty("class", "formatting")
         self.parent.bullet_btn.setMinimumSize(45, 36)
         self.parent.bullet_btn.setFont(QFont("Segoe UI", 12, QFont.Bold))
         self.parent.bullet_btn.setToolTip("Bullet List")
         self.parent.bullet_btn.clicked.connect(self.parent.insert_bullet_list)
-        
+
         self.parent.number_btn = QPushButton("1. 2.")
         self.parent.number_btn.setProperty("class", "formatting")
         self.parent.number_btn.setMinimumSize(45, 36)
         self.parent.number_btn.setFont(QFont("Segoe UI", 11, QFont.Bold))
         self.parent.number_btn.setToolTip("Numbered List")
         self.parent.number_btn.clicked.connect(self.parent.insert_numbered_list)
-        
+
         layout.addWidget(self.parent.bullet_btn)
         layout.addWidget(self.parent.number_btn)
-        
+
         layout.addWidget(self.create_separator())
-        
-        # Color buttons - Enhanced
+
+        # Colors
         self.parent.text_color_btn = QPushButton("A")
         self.parent.text_color_btn.setProperty("class", "formatting")
         self.parent.text_color_btn.setMinimumSize(36, 36)
         self.parent.text_color_btn.setFont(QFont("Segoe UI", 14, QFont.Bold))
         self.parent.text_color_btn.setToolTip("Text Color")
         self.parent.text_color_btn.clicked.connect(self.parent.change_text_color)
-        
+
         self.parent.bg_color_btn = QPushButton("⬛")
         self.parent.bg_color_btn.setProperty("class", "formatting")
         self.parent.bg_color_btn.setMinimumSize(36, 36)
         self.parent.bg_color_btn.setFont(QFont("Segoe UI", 12))
         self.parent.bg_color_btn.setToolTip("Highlight Color")
         self.parent.bg_color_btn.clicked.connect(self.parent.change_background_color)
-        
+
         layout.addWidget(self.parent.text_color_btn)
         layout.addWidget(self.parent.bg_color_btn)
-        
+
         layout.addWidget(self.create_separator())
-        
-        # Media insertion - Enhanced
+
+        # Media
         self.parent.insert_image_btn = QPushButton("🖼")
         self.parent.insert_image_btn.setProperty("class", "formatting")
         self.parent.insert_image_btn.setMinimumSize(42, 36)
@@ -569,8 +582,7 @@ class UIComponents:
         self.parent.insert_image_btn.setToolTip("Insert Image")
         self.parent.insert_image_btn.clicked.connect(self.parent.insert_image)
         layout.addWidget(self.parent.insert_image_btn)
-        
-        # Image resize button - NEW
+
         self.parent.resize_image_btn = QPushButton("📐")
         self.parent.resize_image_btn.setProperty("class", "formatting")
         self.parent.resize_image_btn.setMinimumSize(42, 36)
@@ -578,11 +590,26 @@ class UIComponents:
         self.parent.resize_image_btn.setToolTip("Resize Selected Image (Ctrl+T)")
         self.parent.resize_image_btn.clicked.connect(self.parent.entry_manager.resize_selected_image)
         layout.addWidget(self.parent.resize_image_btn)
-        
-        # Spacer to push everything to the left
+
+        # Spacer
         layout.addStretch()
-        
+
+        # --- Initialize controls from the current editor state ---
+        # (So the toolbar reflects what's under the caret on first load)
+        try:
+            fam = self.parent.editor.currentFont().family()
+            if fam:
+                idx = self.parent.font_combo.findText(fam)
+                if idx >= 0:
+                    self.parent.font_combo.setCurrentIndex(idx)
+            pt = self.parent.editor.currentFont().pointSize()
+            if pt > 0:
+                self.parent.font_size_spin.setValue(pt)
+        except Exception:
+            pass
+
         return toolbar
+
     
     def create_separator(self):
         separator = QFrame()

@@ -2,7 +2,8 @@ from datetime import datetime
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter, QDialog, QColorDialog, QMessageBox
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QTextCursor
-
+from PyQt5.QtWidgets import QTextEdit
+from PyQt5.QtGui import QTextCharFormat, QFont, QTextCursor
 from auto_save_thread import AutoSaveThread
 from ui_components import UIComponents
 from entry_manager import EntryManager
@@ -13,7 +14,6 @@ from calendar_dialog import CalendarDialog
 from password_dialog import PasswordDialog
 from notebook_context_dialog import NotebookContextDialog
 from styles import get_app_stylesheet
-
 from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtGui import QKeySequence
 
@@ -25,6 +25,10 @@ class EncryptedJournal(QMainWindow):
         self.entries = []
         self.unsaved_changes = False
         self.left_panel_visible = True
+        
+        self.editor = QTextEdit()
+        self.editor.setAcceptRichText(True)
+        self.editor.currentCharFormatChanged.connect(self.on_char_format_changed)
         
         # Initialize settings manager first
         self.settings_manager = SettingsManager(self)
@@ -81,6 +85,69 @@ class EncryptedJournal(QMainWindow):
         else:
             # First time setup, create password
             return self.create_new_password()
+        
+    def _merge_format_on_selection(self, fmt: QTextCharFormat):
+        cursor = self.editor.textCursor()
+        if not cursor.hasSelection():
+            cursor.select(QTextCursor.WordUnderCursor)
+        cursor.mergeCharFormat(fmt)
+        self.editor.mergeCurrentCharFormat(fmt)
+
+    def on_font_family_changed(self, qfont: QFont):
+        fmt = QTextCharFormat()
+        fmt.setFontFamily(qfont.family())
+        self._merge_format_on_selection(fmt)
+
+    def on_font_size_changed(self, size_text: str):
+        try:
+            size = float(size_text)
+        except ValueError:
+            return
+        if size > 0:
+            fmt = QTextCharFormat()
+            fmt.setFontPointSize(size)
+            self._merge_format_on_selection(fmt)
+
+    def on_char_format_changed(self, fmt: QTextCharFormat):
+        if hasattr(self, "ui_components"):
+            fam = fmt.fontFamily() or self.editor.currentFont().family()
+            fc = getattr(self.ui_components, "fontCombo", None)
+            if fc is not None and fam:
+                i = fc.findText(fam)
+                if i >= 0 and fc.currentIndex() != i:
+                    b = fc.blockSignals(True); fc.setCurrentIndex(i); fc.blockSignals(b)
+            pt = fmt.fontPointSize()
+            sc = getattr(self.ui_components, "sizeCombo", None)
+            if sc is not None and pt > 0:
+                txt = str(int(pt) if abs(pt - int(pt)) < 0.01 else pt)
+                if sc.findText(txt) < 0:
+                    b2 = sc.blockSignals(True); sc.addItem(txt); sc.blockSignals(b2)
+                if sc.currentText() != txt:
+                    b3 = sc.blockSignals(True); sc.setCurrentText(txt); sc.blockSignals(b3)
+                    
+    def change_font_family(self, font):
+        # font is a QFont object
+        family = qfont.family() if isinstance(qfont, QFont) else str(qfont)
+        fmt = QTextCharFormat()
+        fmt.setFontFamily(family)
+        self._apply_char_format(fmt)
+
+
+    def change_font_size(self, size):
+        """
+        Connected to: self.font_size_spin.valueChanged (emits int)
+        Accepts int/str; converts to float point size.
+        """
+        try:
+            pt = float(size)
+        except Exception:
+            return
+        if pt <= 0:
+            return
+        fmt = QTextCharFormat()
+        fmt.setFontPointSize(pt)
+        self._apply_char_format(fmt)
+
     
     def create_new_password(self):
         """Create a new password for first-time setup"""
@@ -403,15 +470,14 @@ class EncryptedJournal(QMainWindow):
 
     # Formatting methods for the rich text toolbar
     def change_font_family(self, font_name):
+        family = font_name.family() if isinstance(font_name, QFont) else str(font_name)
         cursor = self.editor.textCursor()
+        fmt = QTextCharFormat()
+        fmt.setFontFamily(family)
         if cursor.hasSelection():
-            format = QTextCharFormat()
-            format.setFontFamily(font_name)
-            cursor.mergeCharFormat(format)
+            cursor.mergeCharFormat(fmt)
         else:
-            font = self.editor.currentFont()
-            font.setFamily(font_name)
-            self.editor.setCurrentFont(font)
+            self.editor.mergeCurrentCharFormat(fmt)
     
     def change_font_size(self, size):
         cursor = self.editor.textCursor()

@@ -334,46 +334,49 @@ class EntryManager:
             print(f"Error loading entries: {e}")
     
     def load_selected_entry(self, item):
-        # Check if item is still valid
-        if not item or not item.listWidget():
+        # Safely capture index FIRST (before any dialogs/saves)
+        try:
+            index = item.data(Qt.UserRole) if item is not None else None
+        except RuntimeError:
+            # item already invalid
             return
-            
+        if index is None or not (0 <= index < len(self.parent.entries)):
+            return
+
         if self.parent.unsaved_changes:
-            reply = QMessageBox.question(self.parent, "Unsaved Changes", 
-                                    "You have unsaved changes. Save before switching entries?",
-                                    QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+            reply = QMessageBox.question(
+                self.parent, "Unsaved Changes",
+                "You have unsaved changes. Save before switching entries?",
+                QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel
+            )
             if reply == QMessageBox.Yes:
-                self.save_entry()
+                self.save_entry()  # this repopulates the list and invalidates 'item'
             elif reply == QMessageBox.Cancel:
                 return
-        
-        # Check again after potential save operation
-        if not item or not item.listWidget():
-            return
-            
+            # DO NOT touch 'item' here; it may be deleted now
+
+        # Use the captured index against the current entries list
+        if not (0 <= index < len(self.parent.entries)):
+            return  # list might have changed shape; fail safe
+
         try:
-            index = item.data(Qt.UserRole)
-            if index is None or not (0 <= index < len(self.parent.entries)):
-                return
-                
             entry = self.parent.entries[index]
             self.parent.current_entry = entry
             self.parent.current_entry_path = entry.file_path
             self.parent.entry_title.setText(entry.title)
-            
-            # Load HTML content if available, otherwise use plain text
+
             if hasattr(entry, 'html_content') and entry.html_content:
                 self.parent.editor.setHtml(entry.html_content)
             else:
                 self.parent.editor.setPlainText(entry.content)
-            
+
             self.parent.date_label.setText(datetime.strptime(entry.date, "%Y-%m-%d").strftime("%B %d, %Y"))
             self.parent.unsaved_changes = False
             self.parent.update_status()
-            
-        except (RuntimeError, AttributeError) as e:
+        except Exception as e:
             print(f"Error loading entry: {e}")
             return
+
     
     def delete_entry(self):
         if not self.parent.current_entry_path:
