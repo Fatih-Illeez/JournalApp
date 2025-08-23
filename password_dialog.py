@@ -15,7 +15,7 @@ class PasswordDialog(QDialog):
         
         self.setWindowTitle("SecureJournal - Authentication")
         self.setModal(True)
-        self.setFixedSize(420, 350)
+        self.setFixedSize(450, 450)
         self.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint)
         
         self.setup_ui()

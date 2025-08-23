@@ -16,7 +16,7 @@ class NotebookContextDialog(QDialog):
 
         self.setWindowTitle("Notebook Settings")
         self.setModal(True)
-        self.setFixedSize(480, 420)
+        self.setFixedSize(630, 630)
 
         self.init_ui()
         self.apply_dark_theme()

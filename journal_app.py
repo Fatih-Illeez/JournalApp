@@ -545,7 +545,7 @@ class EncryptedJournal(QMainWindow):
                 self.editor.mergeCurrentCharFormat(format)
     
     def change_background_color(self):
-        color = QColorDialog.getColor(QColor(0, 0, 0), self)
+        color = QColorDialog.getColor(QColor(0, 0, 255), self)
         if color.isValid():
             cursor = self.editor.textCursor()
             format = QTextCharFormat()
