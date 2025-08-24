@@ -366,7 +366,7 @@ class UIComponents:
         status_layout.addWidget(self.parent.last_saved_label)
         
         layout.addWidget(status_section)
-        
+            
         # Connect editor + title + buttons
         self.parent.editor.textChanged.connect(self.parent.on_text_changed)
         self.parent.entry_title.textChanged.connect(self.parent.on_title_changed)

@@ -199,22 +199,18 @@ class EntryManager:
             return
         
         try:
-            # Generate virtual file path
             now = datetime.now()  # Use a single datetime instance
             date_str = now.strftime("%Y-%m-%d")
             timestamp = now.strftime("%H%M%S")
             safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).strip()
             safe_title = safe_title.replace(' ', '_')[:50]
-            
-            # Create virtual path based on notebook
-            if self.parent.current_notebook == "Default":
-                virtual_path = f"default/{date_str}/{safe_title}_{timestamp}.enc"
-            else:
-                virtual_path = f"notebooks/{self.parent.current_notebook}/{date_str}/{safe_title}_{timestamp}.enc"
-            
-            # If updating existing entry, use the same path
+
+            # Always use current_entry_path if set (overwrite), otherwise do not save
             if self.parent.current_entry_path:
                 virtual_path = self.parent.current_entry_path
+            else:
+                QMessageBox.warning(self.parent, "No Entry Selected", "No entry is currently loaded. Please select or create an entry before saving.")
+                return
             
             # Create entry data with embedded images
             entry_data = {
@@ -352,21 +348,23 @@ class EntryManager:
                     virtual_path = file_info["virtual_path"]
                     if not virtual_path.endswith('.enc'):
                         continue
-                    
+
                     encrypted_data = self.secure_storage.load_file(virtual_path)
                     if encrypted_data is None:
                         continue
-                    
+
                     entry_data = json.loads(encrypted_data.decode())
+                    # Always set file_path to the virtual_path from storage
+                    entry_data["file_path"] = virtual_path
                     entries.append(entry_data)
-                    
+
                 except Exception as e:
                     print(f"Error loading entry: {e}")
                     continue
-            
+
             # Sort entries by creation time (most recent first)
             entries.sort(key=lambda x: x.get("created_time", ""), reverse=True)
-            
+
             # Convert dicts to JournalEntry objects for compatibility
             entry_objs = []
             for entry in entries:
@@ -419,7 +417,8 @@ class EntryManager:
         try:
             entry = self.parent.entries[index]
             self.parent.current_entry = entry
-            self.parent.current_entry_path = entry.file_path
+            # Always set current_entry_path to the entry's virtual path
+            self.parent.current_entry_path = getattr(entry, 'file_path', None) or getattr(entry, 'virtual_path', None)
             self.parent.entry_title.setText(entry.title)
 
             if hasattr(entry, 'html_content') and entry.html_content:
