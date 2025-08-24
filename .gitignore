@@ -13,3 +13,11 @@ env/
 # IDE settings
 .vscode/
 .idea/
+
+# PyInstaller build artifacts
+build/
+dist/
+*.spec
+
+# Windows executables
+*.exe

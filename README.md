@@ -26,67 +26,150 @@ A secure, encrypted personal journaling application built with PyQt5 and cryptog
 
 3. **Run the Application**:
    ```bash
-   python main.py
-   ```
 
-## File Structure
+   # SecureJournal
 
-```
-encrypted-journal/
-├── main.py                 # Entry point
-├── journal_app.py          # Main application class
-├── auto_save_thread.py     # Auto-save background thread
-├── calendar_dialog.py      # Calendar picker dialog
-├── entry_manager.py        # Entry CRUD operations
-├── journal_entry.py        # Entry data model
-├── notebook_manager.py     # Notebook management
-├── security_manager.py     # Encryption & security
-├── settings_manager.py     # App configuration
-├── styles.py              # UI styling
-├── ui_components.py        # UI component creation
-└── requirements.txt        # Python dependencies
-```
+   SecureJournal is a privacy-first, fully encrypted journaling application built with PyQt5 and cryptography. It is designed for users who demand maximum security, local-only storage, and advanced organization features for their notes and images.
 
-## Security
+   ---
 
-- **Master Key**: A master encryption key is generated on first run and stored in `~/.encrypted_journal_pro/master.key`
-- **Encrypted Storage**: All journal entries are encrypted before being saved to disk
-- **No Plain Text**: Your entries are never stored in plain text
-- **Secure Lock**: Use "Lock & Exit" to securely close the application
+   ## Features
 
-## Data Storage
+   - **End-to-End Encryption**  
+      All your notes and images are encrypted using the industry-standard Fernet (AES-128) encryption. Your data is never stored in plain text, and only you have access to the encryption key.
 
-Journal data is stored in your home directory:
+   - **Self-Destruct Feature**  
+      For maximum privacy, SecureJournal includes a self-destruct option. When triggered, this feature securely deletes all your encrypted data and keys, making recovery impossible. This is ideal for users who require absolute confidentiality.
 
-- **Location**: `~/.encrypted_journal_pro/`
-- **Structure**:
-  - `master.key` - Encryption key (keep safe!)
-  - `config.json` - Application settings
-  - `notebooks/` - Custom notebooks
-  - `YYYY-MM-DD/` - Daily entry folders
+   - **Local-Only Storage**  
+      All data is stored exclusively on your machine. Nothing is ever uploaded or synced to the cloud, ensuring your journal remains private and under your control.
 
-## Usage
+   - **Multiple Notebooks & Notes**  
+      Organize your thoughts with unlimited notebooks. Each notebook can contain multiple notes, allowing for flexible categorization and easy retrieval.
 
-1. **First Run**: The app will create encryption keys automatically
-2. **Create Entry**: Click the "+" button next to Entries
-3. **Write**: Use the rich text editor with formatting toolbar
-4. **Save**: Entries auto-save or use Ctrl+S
-5. **Organize**: Create notebooks to categorize entries
-6. **Export**: Use the export function to backup your journal
+   - **Rich Text & Image Support**  
+      Write with a full-featured rich text editor supporting bold, italic, underline, font size, color, and more. You can also insert images into your notes.
 
-## Keyboard Shortcuts
+   - **Image Rescale Support**  
+      Easily resize images within your notes to fit your layout and preferences.
 
-- **Ctrl+N**: New entry
-- **Ctrl+S**: Save entry
-- **Ctrl+Z**: Undo
-- **Ctrl+Y**: Redo
-- **Ctrl+B**: Bold
-- **Ctrl+I**: Italic
-- **Ctrl+U**: Underline
+   - **Export Functionality**  
+      Export your entire journal, individual notebooks, or single notes to plain text or HTML for backup or sharing. Exports are always decrypted and readable.
 
-## Security Best Practices
+   - **Auto-Save**  
+      Your work is automatically saved every 30 seconds, so you never lose progress.
 
-1. **Backup your key**: The `master.key` file is crucial - back it up safely
+   - **Calendar & Date Organization**  
+      Browse and organize entries by date using the built-in calendar view.
+
+   - **Word/Character Count**  
+      Real-time statistics help you track your writing progress.
+
+   - **Modern Dark Theme**  
+      Enjoy a beautiful, distraction-free dark UI.
+
+   ---
+
+   ## Security & Encryption
+
+   - **Encryption Details**:  
+      SecureJournal uses Fernet symmetric encryption (AES-128 in CBC mode with HMAC authentication). Each note and image is encrypted before being written to disk. The encryption key is generated on first use and never leaves your device.
+
+   - **Key Storage**:  
+      The master key is stored in your user directory in a protected file. Without this key, your data is cryptographically inaccessible.
+
+   - **Self-Destruct**:  
+      The self-destruct feature securely deletes all encrypted data and the master key. This process is irreversible, ensuring that no one (not even you) can recover your journal after destruction.
+
+   - **No Cloud, No Tracking**:  
+      SecureJournal does not connect to the internet, does not sync, and does not collect any analytics or telemetry.
+
+   ---
+
+   ## Data Storage
+
+   - **Location**:  
+      All data is stored in a dedicated folder in your user directory (e.g., `~/.secure_journal/`).
+
+   - **Structure**:  
+      - `master.key` — Your encryption key (do not lose this!)
+      - `config.json` — Application settings
+      - `notebooks/` — All your notebooks and notes, encrypted
+      - `images/` — Encrypted images
+      - `exports/` — Your exported, decrypted notes (if you use export)
+
+   ---
+
+   ## How to Use
+
+   1. **First Launch**:  
+       The app generates a unique encryption key and sets up your secure environment.
+
+   2. **Creating Notebooks & Notes**:  
+       Add new notebooks and notes using the intuitive sidebar and toolbar.
+
+   3. **Writing & Formatting**:  
+       Use the rich text editor to write, format, and insert images.
+
+   4. **Image Handling**:  
+       Drag and drop images or use the insert image button. Resize images as needed.
+
+   5. **Exporting**:  
+       Use the export feature to save your notes or entire notebooks as plain text or HTML.
+
+   6. **Self-Destruct**:  
+       Trigger the self-destruct from the settings menu if you need to permanently erase all data.
+
+   7. **Lock & Exit**:  
+       Use the lock button to securely close the app and protect your data.
+
+   ---
+
+   ## Keyboard Shortcuts
+
+   - **Ctrl+N**: New note
+   - **Ctrl+S**: Save note
+   - **Ctrl+B/I/U**: Bold, Italic, Underline
+   - **Ctrl+E**: Export
+   - **Ctrl+L**: Lock & Exit
+
+   ---
+
+   ## Security Best Practices
+
+   - **Backup Your Key**:  
+      The `master.key` file is essential. Back it up in a secure location.
+
+   - **No Recovery Without Key**:  
+      If you lose your key, your data cannot be recovered.
+
+   - **Local Backups**:  
+      Regularly export or backup your data folder for extra safety.
+
+   ---
+
+   ## Troubleshooting
+
+   - **Dependencies**:  
+      Ensure all Python dependencies are installed (`pip install -r requirements.txt`).
+
+   - **Permissions**:  
+      Make sure you have write access to your user directory.
+
+   - **Lost Key**:  
+      Without your `master.key`, your data is unrecoverable.
+
+   ---
+
+   ## Contributing
+
+   Suggestions and bug reports are welcome! Please open an issue or pull request.
+
+   ---
+
+   ## License
+
+   This project is for personal use. All rights reserved. Respect user privacy and security.
 2. **Use Lock & Exit**: Always use the lock button to close securely
 3. **Keep software updated**: Regularly update dependencies
 4. **Secure your system**: Use full disk encryption and strong passwords
