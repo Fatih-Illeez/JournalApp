@@ -261,7 +261,6 @@ class NotebookManager:
         # Update storage info
         try:
             stats = self.parent.entry_manager.get_storage_stats()
-            self.parent.ui_components.update_storage_info(stats)
         except Exception:
             pass
     

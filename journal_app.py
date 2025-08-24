@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QTextCursor
 from PyQt5.QtWidgets import QTextEdit
 from PyQt5.QtGui import QTextCharFormat, QFont, QTextCursor
+from PyQt5.QtGui import QFont
 from auto_save_thread import AutoSaveThread
 from ui_components import UIComponents
 from entry_manager import EntryManager
@@ -87,18 +88,23 @@ class EncryptedJournal(QMainWindow):
             return self.create_new_password()
         
     def _merge_format_on_selection(self, fmt: QTextCharFormat):
+        """Apply character formatting to selected text or current position"""
         cursor = self.editor.textCursor()
-        if not cursor.hasSelection():
-            cursor.select(QTextCursor.WordUnderCursor)
-        cursor.mergeCharFormat(fmt)
-        self.editor.mergeCurrentCharFormat(fmt)
+        if cursor.hasSelection():
+            # Apply to selected text
+            cursor.mergeCharFormat(fmt)
+        else:
+            # Apply to current typing position
+            self.editor.mergeCurrentCharFormat(fmt)
 
     def on_font_family_changed(self, qfont: QFont):
+        """Handle font family change from combo box"""
         fmt = QTextCharFormat()
         fmt.setFontFamily(qfont.family())
         self._merge_format_on_selection(fmt)
 
     def on_font_size_changed(self, size_text: str):
+        """Handle font size change from spin box"""
         try:
             size = float(size_text)
         except ValueError:
@@ -109,44 +115,52 @@ class EncryptedJournal(QMainWindow):
             self._merge_format_on_selection(fmt)
 
     def on_char_format_changed(self, fmt: QTextCharFormat):
-        if hasattr(self, "ui_components"):
-            fam = fmt.fontFamily() or self.editor.currentFont().family()
-            fc = getattr(self.ui_components, "fontCombo", None)
-            if fc is not None and fam:
-                i = fc.findText(fam)
-                if i >= 0 and fc.currentIndex() != i:
-                    b = fc.blockSignals(True); fc.setCurrentIndex(i); fc.blockSignals(b)
-            pt = fmt.fontPointSize()
-            sc = getattr(self.ui_components, "sizeCombo", None)
-            if sc is not None and pt > 0:
-                txt = str(int(pt) if abs(pt - int(pt)) < 0.01 else pt)
-                if sc.findText(txt) < 0:
-                    b2 = sc.blockSignals(True); sc.addItem(txt); sc.blockSignals(b2)
-                if sc.currentText() != txt:
-                    b3 = sc.blockSignals(True); sc.setCurrentText(txt); sc.blockSignals(b3)
+        """Update toolbar controls when cursor format changes"""
+        if hasattr(self, "ui_components") and hasattr(self, "font_combo"):
+            # Update font family combo
+            family = fmt.fontFamily()
+            if not family:
+                family = self.editor.currentFont().family()
+            
+            if family:
+                # Block signals to prevent recursive calls
+                self.font_combo.blockSignals(True)
+                index = self.font_combo.findText(family)
+                if index >= 0:
+                    self.font_combo.setCurrentIndex(index)
+                self.font_combo.blockSignals(False)
+            
+            # Update font size spin box
+            point_size = fmt.fontPointSize()
+            if point_size > 0:
+                self.font_size_spin.blockSignals(True)
+                self.font_size_spin.setValue(int(point_size))
+                self.font_size_spin.blockSignals(False)
+            
+            # Update formatting buttons
+            if hasattr(self, 'bold_btn'):
+                weight = fmt.fontWeight()
+                self.bold_btn.blockSignals(True)
+                self.bold_btn.setChecked(weight >= QFont.Bold)
+                self.bold_btn.blockSignals(False)
+            
+            if hasattr(self, 'italic_btn'):
+                self.italic_btn.blockSignals(True)
+                self.italic_btn.setChecked(fmt.fontItalic())
+                self.italic_btn.blockSignals(False)
+            
+            if hasattr(self, 'underline_btn'):
+                self.underline_btn.blockSignals(True)
+                self.underline_btn.setChecked(fmt.fontUnderline())
+                self.underline_btn.blockSignals(False)
                     
-    def change_font_family(self, font):
-        # font is a QFont object
-        family = qfont.family() if isinstance(qfont, QFont) else str(qfont)
-        fmt = QTextCharFormat()
-        fmt.setFontFamily(family)
-        self._apply_char_format(fmt)
-
+    def change_font_family(self, font_name):
+        """OLD METHOD - REPLACE WITH on_font_family_changed"""
+        pass
 
     def change_font_size(self, size):
-        """
-        Connected to: self.font_size_spin.valueChanged (emits int)
-        Accepts int/str; converts to float point size.
-        """
-        try:
-            pt = float(size)
-        except Exception:
-            return
-        if pt <= 0:
-            return
-        fmt = QTextCharFormat()
-        fmt.setFontPointSize(pt)
-        self._apply_char_format(fmt)
+        """OLD METHOD - REPLACE WITH on_font_size_changed"""  
+        pass
 
     
     def create_new_password(self):
@@ -308,7 +322,6 @@ class EncryptedJournal(QMainWindow):
         """Update the storage information display"""
         try:
             stats = self.entry_manager.get_storage_stats()
-            self.ui_components.update_storage_info(stats)
         except Exception as e:
             print(f"Error updating storage display: {e}")
     
@@ -491,38 +504,25 @@ class EncryptedJournal(QMainWindow):
             self.editor.setCurrentFont(font)
     
     def toggle_bold(self):
-        cursor = self.editor.textCursor()
-        format = QTextCharFormat()
-        
+        """Toggle bold formatting"""
+        fmt = QTextCharFormat()
         if self.bold_btn.isChecked():
-            format.setFontWeight(QFont.Bold)
+            fmt.setFontWeight(QFont.Bold)
         else:
-            format.setFontWeight(QFont.Normal)
-        
-        if cursor.hasSelection():
-            cursor.mergeCharFormat(format)
-        else:
-            self.editor.mergeCurrentCharFormat(format)
-    
+            fmt.setFontWeight(QFont.Normal)
+        self._merge_format_on_selection(fmt)
+
     def toggle_italic(self):
-        cursor = self.editor.textCursor()
-        format = QTextCharFormat()
-        format.setFontItalic(self.italic_btn.isChecked())
-        
-        if cursor.hasSelection():
-            cursor.mergeCharFormat(format)
-        else:
-            self.editor.mergeCurrentCharFormat(format)
-    
+        """Toggle italic formatting"""
+        fmt = QTextCharFormat()
+        fmt.setFontItalic(self.italic_btn.isChecked())
+        self._merge_format_on_selection(fmt)
+
     def toggle_underline(self):
-        cursor = self.editor.textCursor()
-        format = QTextCharFormat()
-        format.setFontUnderline(self.underline_btn.isChecked())
-        
-        if cursor.hasSelection():
-            cursor.mergeCharFormat(format)
-        else:
-            self.editor.mergeCurrentCharFormat(format)
+        """Toggle underline formatting"""
+        fmt = QTextCharFormat()
+        fmt.setFontUnderline(self.underline_btn.isChecked())
+        self._merge_format_on_selection(fmt)
     
     def insert_bullet_list(self):
         cursor = self.editor.textCursor()

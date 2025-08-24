@@ -229,50 +229,6 @@ class UIComponents:
         
         content_layout.addWidget(self.parent.left_splitter, 1)  # Take all available space
         
-        # # Storage info section - Full width
-        # storage_frame = QFrame()
-        # storage_frame.setObjectName("storageSection")
-        # storage_frame.setStyleSheet("""
-        #     QFrame#storageSection {
-        #         background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-        #                                    stop: 0 #1f2937, stop: 1 #111827);
-        #         border: none;
-        #         border-top: 1px solid #374151;
-        #         border-radius: 0;
-        #     }
-        # """)
-        # storage_layout = QVBoxLayout(storage_frame)
-        # storage_layout.setContentsMargins(15, 10, 15, 10)  # Only inside padding
-        # storage_layout.setSpacing(4)
-        
-        # storage_label = QLabel("SECURE STORAGE")
-        # storage_label.setFont(QFont("Segoe UI", 9, QFont.Bold))
-        # storage_label.setStyleSheet("color: #9ca3af; background: transparent;")
-        # storage_label.setAlignment(Qt.AlignCenter)
-        
-        # self.parent.storage_info_label = QLabel("0 files • 0 MB")
-        # self.parent.storage_info_label.setObjectName("storageInfo")
-        # self.parent.storage_info_label.setFont(QFont("Segoe UI", 9))
-        # self.parent.storage_info_label.setAlignment(Qt.AlignCenter)
-        
-        # storage_layout.addWidget(storage_label)
-        # storage_layout.addWidget(self.parent.storage_info_label)
-        # content_layout.addWidget(storage_frame)
-        
-        # # Bottom action button - Full width
-        # button_container = QFrame()
-        # button_container.setStyleSheet("background-color: #252525; border: none;")
-        # button_layout = QVBoxLayout(button_container)
-        # button_layout.setContentsMargins(15, 15, 15, 15)  # Padding only inside
-        
-        # self.parent.lock_btn = QPushButton("🔒 Lock & Exit")
-        # self.parent.lock_btn.setObjectName("lockButton")
-        # self.parent.lock_btn.setMinimumHeight(45)
-        # self.parent.lock_btn.setFont(QFont("Segoe UI", 11, QFont.Bold))
-        
-        #button_layout.addWidget(self.parent.lock_btn)
-        #content_layout.addWidget(button_container)
-        
         layout.addWidget(content_area, 1)
         
         # Connect events
@@ -280,7 +236,6 @@ class UIComponents:
         self.parent.notebooks_list.itemClicked.connect(self.parent.select_notebook)
         self.parent.new_entry_btn.clicked.connect(self.parent.new_entry)
         self.parent.entry_list.itemClicked.connect(self.parent.load_selected_entry)
-        #self.parent.lock_btn.clicked.connect(self.parent.lock_and_exit)
         
         return panel
     
@@ -365,9 +320,7 @@ class UIComponents:
         self.parent.editor.setAcceptRichText(True)  # REQUIRED for fonts/styles to work
         self.parent.editor.setFont(QFont("Segoe UI", self.parent.config["font_size"]))
         self.parent.editor.setPlaceholderText("Start writing...")
-        self.parent.editor.setLineWrapMode(
-            QTextEdit.WidgetWidth if self.parent.config["word_wrap"] else QTextEdit.NoWrap
-        )
+        self.parent.editor.setLineWrapMode(QTextEdit.WidgetWidth)
 
         # Keep toolbar in sync with caret's formatting
         # Requires EncryptedJournal to define on_char_format_changed(fmt: QTextCharFormat)
@@ -435,41 +388,9 @@ class UIComponents:
         self.parent.status_bar.addPermanentWidget(self.parent.progress_bar)
     
     def create_toolbar(self):
-        toolbar = QToolBar()
-        self.parent.addToolBar(toolbar)
-        
-        # Font size actions
-        decrease_font = QAction("A−", self.parent)
-        decrease_font.setToolTip("Decrease Font Size")
-        decrease_font.triggered.connect(self.parent.decrease_font_size)
-        toolbar.addAction(decrease_font)
-        
-        increase_font = QAction("A+", self.parent)
-        increase_font.setToolTip("Increase Font Size")
-        increase_font.triggered.connect(self.parent.increase_font_size)
-        toolbar.addAction(increase_font)
-        
-        toolbar.addSeparator()
-        
-        # Word wrap toggle
-        word_wrap = QAction("Word Wrap", self.parent)
-        word_wrap.setCheckable(True)
-        word_wrap.setChecked(self.parent.config["word_wrap"])
-        word_wrap.triggered.connect(self.parent.toggle_word_wrap)
-        toolbar.addAction(word_wrap)
-        
-        toolbar.addSeparator()
-        
-        # Storage management actions
-        storage_stats = QAction("Storage Info", self.parent)
-        storage_stats.setToolTip("View Storage Statistics")
-        storage_stats.triggered.connect(self.parent.show_storage_stats)
-        toolbar.addAction(storage_stats)
-        
-        cleanup_storage = QAction("Cleanup", self.parent)
-        cleanup_storage.setToolTip("Cleanup Unused Files")
-        cleanup_storage.triggered.connect(self.parent.cleanup_storage)
-        toolbar.addAction(cleanup_storage)
+        # REMOVED THE TOOLBAR COMPLETELY
+        # This method now does nothing, removing the storage info and cleanup toolbar
+        pass
 
     def create_formatting_toolbar(self):
         toolbar = QFrame()
@@ -503,8 +424,8 @@ class UIComponents:
         self.parent.font_combo.setMinimumWidth(160)
         self.parent.font_combo.setMaximumWidth(200)
         self.parent.font_combo.setToolTip("Font family")
-        # connect to a slot on the main window (you'll add change_font_family there)
-        self.parent.font_combo.currentFontChanged.connect(self.parent.change_font_family)
+        # Connect directly to the fixed method
+        self.parent.font_combo.currentFontChanged.connect(self.parent.on_font_family_changed)
         layout.addWidget(self.parent.font_combo)
 
         # --- Font size (point size) ---
@@ -515,8 +436,8 @@ class UIComponents:
         self.parent.font_size_spin.setMinimumWidth(68)
         self.parent.font_size_spin.setMaximumWidth(68)
         self.parent.font_size_spin.setToolTip("Font size (pt)")
-        # connect to a slot on the main window (you'll add change_font_size there)
-        self.parent.font_size_spin.valueChanged.connect(self.parent.change_font_size)
+        # Connect to the fixed method that handles string conversion
+        self.parent.font_size_spin.valueChanged.connect(lambda val: self.parent.on_font_size_changed(str(val)))
         layout.addWidget(self.parent.font_size_spin)
 
         layout.addWidget(self.create_separator())
@@ -637,23 +558,6 @@ class UIComponents:
         separator.setStyleSheet("color: #6b7280; background-color: #6b7280; margin: 4px;")
         return separator
     
-    def update_storage_info(self, stats):
-        """Update the storage information display"""
-        try:
-            files = stats.get("virtual_files", 0)
-            size_mb = stats.get("total_size_mb", 0.0)
-            
-            # Format the display text
-            if files == 0:
-                display_text = "No files stored"
-            elif files == 1:
-                display_text = f"1 file • {size_mb} MB"
-            else:
-                display_text = f"{files} files • {size_mb} MB"
-            
-            self.parent.storage_info_label.setText(display_text)
-        except Exception:
-            self.parent.storage_info_label.setText("Storage info unavailable")
     
     def update_notebooks_with_counts(self, notebooks_data):
         """Update the notebooks list with entry counts - using plain text formatting"""
