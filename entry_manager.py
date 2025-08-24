@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QTextCursor
 from journal_entry import JournalEntry
 from secure_storage_manager import SecureStorageManager
+import json
 
 
 class ImageResizeDialog(QDialog):
@@ -332,6 +333,62 @@ class EntryManager:
                                 
         except Exception as e:
             print(f"Error loading entries: {e}")
+            
+    def load_recent_entries(self):
+        """Load and display recent entries with enhanced formatting"""
+        try:
+            # Get current notebook path
+            if self.parent.current_notebook == "Default":
+                path_prefix = "default/"
+            else:
+                path_prefix = f"notebooks/{self.parent.current_notebook}/"
+            
+            # Get files from secure storage
+            files = self.secure_storage.list_files(path_prefix)
+            entries = []
+            
+            for file_info in files:
+                try:
+                    virtual_path = file_info["virtual_path"]
+                    if not virtual_path.endswith('.enc'):
+                        continue
+                    
+                    encrypted_data = self.secure_storage.load_file(virtual_path)
+                    if encrypted_data is None:
+                        continue
+                    
+                    entry_data = json.loads(encrypted_data.decode())
+                    entries.append(entry_data)
+                    
+                except Exception as e:
+                    print(f"Error loading entry: {e}")
+                    continue
+            
+            # Sort entries by creation time (most recent first)
+            entries.sort(key=lambda x: x.get("created_time", ""), reverse=True)
+            
+            # Convert dicts to JournalEntry objects for compatibility
+            entry_objs = []
+            for entry in entries:
+                # Defensive: handle missing keys
+                title = entry.get("title", "Untitled")
+                content = entry.get("content", entry.get("plain_text", ""))
+                date = entry.get("date", "")
+                file_path = entry.get("file_path", entry.get("virtual_path", None))
+                je = JournalEntry(title, content, date, file_path)
+                je.word_count = entry.get("word_count", len(content.split()))
+                je.created_time = entry.get("created_time", "")
+                je.has_images = entry.get("has_images", False)
+                je.html_content = entry.get("content", "")
+                entry_objs.append(je)
+            # Use the new formatting method from UI components
+            self.parent.ui_components.update_entry_list_with_formatting(entry_objs)
+            # Update the entries list for compatibility
+            self.parent.entries = entry_objs
+            
+        except Exception as e:
+            print(f"Error loading recent entries: {e}")
+            self.parent.entry_list.clear()
     
     def load_selected_entry(self, item):
         # Safely capture index FIRST (before any dialogs/saves)
@@ -340,7 +397,7 @@ class EntryManager:
         except RuntimeError:
             # item already invalid
             return
-        if index is None or not (0 <= index < len(self.parent.entries)):
+        if index is None or index < 0 or index >= len(self.parent.entries):
             return
 
         if self.parent.unsaved_changes:

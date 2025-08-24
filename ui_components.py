@@ -97,7 +97,7 @@ class UIComponents:
         
         # Header section
         header_section = QFrame()
-        header_section.setStyleSheet("background-color: #6366f1; border: none; border-radius: 0;")
+        header_section.setStyleSheet("background-color: #1a1a1a; border: none; border-radius: 0;")
         header_section.setFixedHeight(80)
         
         header_layout = QVBoxLayout(header_section)
@@ -119,30 +119,30 @@ class UIComponents:
         header_layout.addWidget(subtitle)
         layout.addWidget(header_section)
         
-        # Main content area - Dark background
+        # Main content area - Dark background with full width
         content_area = QFrame()
         content_area.setStyleSheet("background-color: #252525; border: none;")
         content_layout = QVBoxLayout(content_area)
-        content_layout.setContentsMargins(15, 15, 15, 15)
-        content_layout.setSpacing(20)
+        content_layout.setContentsMargins(0, 0, 0, 15)  # No left/right margins for full width
+        content_layout.setSpacing(0)  # No spacing between sections
         
         # Create vertical splitter for notebooks and entries with enhanced functionality
         self.parent.left_splitter = QSplitter(Qt.Vertical)
         self.parent.left_splitter.setHandleWidth(8)  # Make handle more visible
         self.parent.left_splitter.setChildrenCollapsible(False)  # Prevent complete collapse
         
-        # Notebooks section
+        # Notebooks section - Full width
         notebooks_widget = QWidget()
-        notebooks_widget.setStyleSheet("background-color: #2b2b2b; border-radius: 8px;")
+        notebooks_widget.setStyleSheet("background-color: #2b2b2b; border: none; border-radius: 0;")
         notebooks_layout = QVBoxLayout(notebooks_widget)
-        notebooks_layout.setContentsMargins(15, 15, 15, 15)
-        notebooks_layout.setSpacing(8)
+        notebooks_layout.setContentsMargins(0, 0, 0, 0)  # No margins for full width
+        notebooks_layout.setSpacing(0)
         
-        # Notebooks header
+        # Notebooks header - with padding only inside
         notebooks_header = QFrame()
-        notebooks_header.setStyleSheet("background: transparent; border: none;")
+        notebooks_header.setStyleSheet("background-color: #1e1e1e; border: none; border-bottom: 1px solid #404040;")
         notebooks_header_layout = QHBoxLayout(notebooks_header)
-        notebooks_header_layout.setContentsMargins(0, 0, 0, 10)
+        notebooks_header_layout.setContentsMargins(15, 15, 15, 10)  # Padding only inside header
         
         notebooks_label = QLabel("NOTEBOOKS")
         notebooks_label.setObjectName("sectionHeader")
@@ -159,27 +159,28 @@ class UIComponents:
         notebooks_header_layout.addStretch()
         notebooks_header_layout.addWidget(self.parent.new_notebook_btn)
         
-        # Notebooks list
+        # Notebooks list - Full width
         self.parent.notebooks_list = EnhancedNotebookListWidget(self.parent)
         self.parent.notebooks_list.setObjectName("notebooksList")
         self.parent.notebooks_list.setMinimumHeight(100)
-
+        # Remove margins/padding to ensure full width
+        self.parent.notebooks_list.setContentsMargins(0, 0, 0, 0)
         
         notebooks_layout.addWidget(notebooks_header)
         notebooks_layout.addWidget(self.parent.notebooks_list)
         
-        # Entries section
+        # Entries section - Full width
         entries_widget = QWidget()
-        entries_widget.setStyleSheet("background-color: #2b2b2b; border-radius: 8px;")
+        entries_widget.setStyleSheet("background-color: #2b2b2b; border: none; border-radius: 0;")
         entries_layout = QVBoxLayout(entries_widget)
-        entries_layout.setContentsMargins(15, 15, 15, 15)
-        entries_layout.setSpacing(8)
+        entries_layout.setContentsMargins(0, 0, 0, 0)  # No margins for full width
+        entries_layout.setSpacing(0)
         
-        # Entries header
+        # Entries header - with padding only inside
         entries_header = QFrame()
-        entries_header.setStyleSheet("background: transparent; border: none;")
+        entries_header.setStyleSheet("background-color: #1e1e1e; border: none; border-bottom: 1px solid #404040;")
         entries_header_layout = QHBoxLayout(entries_header)
-        entries_header_layout.setContentsMargins(0, 0, 0, 10)
+        entries_header_layout.setContentsMargins(15, 15, 15, 10)  # Padding only inside header
         
         entries_label = QLabel("NOTES")
         entries_label.setObjectName("sectionHeader")
@@ -196,11 +197,12 @@ class UIComponents:
         entries_header_layout.addStretch()
         entries_header_layout.addWidget(self.parent.new_entry_btn)
         
-        # Entry list
+        # Entry list - Full width
         self.parent.entry_list = QListWidget()
         self.parent.entry_list.setObjectName("entriesList")
         self.parent.entry_list.setMinimumHeight(200)
-
+        # Remove margins/padding to ensure full width
+        self.parent.entry_list.setContentsMargins(0, 0, 0, 0)
         
         entries_layout.addWidget(entries_header)
         entries_layout.addWidget(self.parent.entry_list)
@@ -225,35 +227,51 @@ class UIComponents:
         self.parent.left_splitter.setCollapsible(0, False)
         self.parent.left_splitter.setCollapsible(1, False)
         
-        content_layout.addWidget(self.parent.left_splitter)
+        content_layout.addWidget(self.parent.left_splitter, 1)  # Take all available space
         
-        # Storage info section
-        storage_frame = QFrame()
-        storage_frame.setObjectName("storageSection")
-        storage_layout = QVBoxLayout(storage_frame)
-        storage_layout.setContentsMargins(12, 10, 12, 10)
-        storage_layout.setSpacing(4)
+        # # Storage info section - Full width
+        # storage_frame = QFrame()
+        # storage_frame.setObjectName("storageSection")
+        # storage_frame.setStyleSheet("""
+        #     QFrame#storageSection {
+        #         background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+        #                                    stop: 0 #1f2937, stop: 1 #111827);
+        #         border: none;
+        #         border-top: 1px solid #374151;
+        #         border-radius: 0;
+        #     }
+        # """)
+        # storage_layout = QVBoxLayout(storage_frame)
+        # storage_layout.setContentsMargins(15, 10, 15, 10)  # Only inside padding
+        # storage_layout.setSpacing(4)
         
-        storage_label = QLabel("SECURE STORAGE")
-        storage_label.setFont(QFont("Segoe UI", 9, QFont.Bold))
-        storage_label.setStyleSheet("color: #9ca3af; background: transparent;")
-        storage_label.setAlignment(Qt.AlignCenter)
+        # storage_label = QLabel("SECURE STORAGE")
+        # storage_label.setFont(QFont("Segoe UI", 9, QFont.Bold))
+        # storage_label.setStyleSheet("color: #9ca3af; background: transparent;")
+        # storage_label.setAlignment(Qt.AlignCenter)
         
-        self.parent.storage_info_label = QLabel("0 files • 0 MB")
-        self.parent.storage_info_label.setObjectName("storageInfo")
-        self.parent.storage_info_label.setFont(QFont("Segoe UI", 9))
-        self.parent.storage_info_label.setAlignment(Qt.AlignCenter)
+        # self.parent.storage_info_label = QLabel("0 files • 0 MB")
+        # self.parent.storage_info_label.setObjectName("storageInfo")
+        # self.parent.storage_info_label.setFont(QFont("Segoe UI", 9))
+        # self.parent.storage_info_label.setAlignment(Qt.AlignCenter)
         
-        storage_layout.addWidget(storage_label)
-        storage_layout.addWidget(self.parent.storage_info_label)
-        content_layout.addWidget(storage_frame)
+        # storage_layout.addWidget(storage_label)
+        # storage_layout.addWidget(self.parent.storage_info_label)
+        # content_layout.addWidget(storage_frame)
         
-        # Bottom action button
-        self.parent.lock_btn = QPushButton("🔒 Lock & Exit")
-        self.parent.lock_btn.setObjectName("lockButton")
-        self.parent.lock_btn.setMinimumHeight(45)
-        self.parent.lock_btn.setFont(QFont("Segoe UI", 11, QFont.Bold))
-        content_layout.addWidget(self.parent.lock_btn)
+        # # Bottom action button - Full width
+        # button_container = QFrame()
+        # button_container.setStyleSheet("background-color: #252525; border: none;")
+        # button_layout = QVBoxLayout(button_container)
+        # button_layout.setContentsMargins(15, 15, 15, 15)  # Padding only inside
+        
+        # self.parent.lock_btn = QPushButton("🔒 Lock & Exit")
+        # self.parent.lock_btn.setObjectName("lockButton")
+        # self.parent.lock_btn.setMinimumHeight(45)
+        # self.parent.lock_btn.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        
+        #button_layout.addWidget(self.parent.lock_btn)
+        #content_layout.addWidget(button_container)
         
         layout.addWidget(content_area, 1)
         
@@ -262,7 +280,7 @@ class UIComponents:
         self.parent.notebooks_list.itemClicked.connect(self.parent.select_notebook)
         self.parent.new_entry_btn.clicked.connect(self.parent.new_entry)
         self.parent.entry_list.itemClicked.connect(self.parent.load_selected_entry)
-        self.parent.lock_btn.clicked.connect(self.parent.lock_and_exit)
+        #self.parent.lock_btn.clicked.connect(self.parent.lock_and_exit)
         
         return panel
     
@@ -351,7 +369,7 @@ class UIComponents:
             QTextEdit.WidgetWidth if self.parent.config["word_wrap"] else QTextEdit.NoWrap
         )
 
-        # Keep toolbar in sync with caret’s formatting
+        # Keep toolbar in sync with caret's formatting
         # Requires EncryptedJournal to define on_char_format_changed(fmt: QTextCharFormat)
         self.parent.editor.currentCharFormatChanged.connect(self.parent.on_char_format_changed)
 
@@ -535,7 +553,7 @@ class UIComponents:
         layout.addWidget(self.create_separator())
 
         # Lists
-        self.parent.bullet_btn = QPushButton("• ‥")
+        self.parent.bullet_btn = QPushButton("• ≡")
         self.parent.bullet_btn.setProperty("class", "formatting")
         self.parent.bullet_btn.setMinimumSize(45, 36)
         self.parent.bullet_btn.setFont(QFont("Segoe UI", 12, QFont.Bold))
@@ -583,7 +601,7 @@ class UIComponents:
         self.parent.insert_image_btn.clicked.connect(self.parent.insert_image)
         layout.addWidget(self.parent.insert_image_btn)
 
-        self.parent.resize_image_btn = QPushButton("📐")
+        self.parent.resize_image_btn = QPushButton("🔍")
         self.parent.resize_image_btn.setProperty("class", "formatting")
         self.parent.resize_image_btn.setMinimumSize(42, 36)
         self.parent.resize_image_btn.setFont(QFont("Segoe UI", 14))
@@ -638,7 +656,7 @@ class UIComponents:
             self.parent.storage_info_label.setText("Storage info unavailable")
     
     def update_notebooks_with_counts(self, notebooks_data):
-        """Update the notebooks list with entry counts"""
+        """Update the notebooks list with entry counts - using plain text formatting"""
         self.parent.notebooks_list.clear()
         
         for notebook_info in notebooks_data:
@@ -646,29 +664,22 @@ class UIComponents:
             notebook_name = notebook_info['name']
             entry_count = notebook_info['count']
             
-            # Format the display text
+            # Format the display text with plain text formatting
             if entry_count == 0:
-                display_text = f"{notebook_name}"
                 subtitle = "Empty"
             elif entry_count == 1:
-                display_text = f"{notebook_name}"
                 subtitle = "1 note"
             else:
-                display_text = f"{notebook_name}"
                 subtitle = f"{entry_count} notes"
             
-            # Create a rich text format for the item
-            item_text = f"{display_text}\n{subtitle}"
-            item.setText(item_text)
-            
-            # Store the actual notebook name for selection logic
+            # Use plain text with newlines instead of HTML
+            display_text = f"{notebook_name}\n{subtitle}"
+            item.setText(display_text)
             item.setData(Qt.UserRole, notebook_name)
             
-            # Add special styling for the default notebook
-            if notebook_name == "Default":
-                item.setFont(QFont("Segoe UI", 11, QFont.Bold))
-            else:
-                item.setFont(QFont("Segoe UI", 11))
+            # Set fonts for better visual hierarchy
+            font = QFont("Segoe UI", 12)
+            item.setFont(font)
             
             self.parent.notebooks_list.addItem(item)
         
@@ -678,3 +689,26 @@ class UIComponents:
             if item.data(Qt.UserRole) == self.parent.current_notebook:
                 self.parent.notebooks_list.setCurrentRow(i)
                 break
+
+    def update_entry_list_with_formatting(self, entries):
+        """Update entry list with improved formatting - using plain text"""
+        self.parent.entry_list.clear()
+        for idx, entry in enumerate(entries):
+            item = QListWidgetItem()
+            # Use attribute access for JournalEntry objects
+            title = getattr(entry, "title", "Untitled")
+            date = getattr(entry, "date", "")
+            word_count = getattr(entry, "word_count", 0)
+            # Format word count
+            if word_count == 0:
+                word_text = "No words"
+            elif word_count == 1:
+                word_text = "1 word"
+            else:
+                word_text = f"{word_count} words"
+            display_text = f"{title}\n{date}  •  {word_text}"
+            item.setText(display_text)
+            item.setData(Qt.UserRole, idx)
+            font = QFont("Segoe UI", 11)
+            item.setFont(font)
+            self.parent.entry_list.addItem(item)
