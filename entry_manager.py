@@ -199,18 +199,22 @@ class EntryManager:
             return
         
         try:
+            # Generate virtual file path
             now = datetime.now()  # Use a single datetime instance
             date_str = now.strftime("%Y-%m-%d")
             timestamp = now.strftime("%H%M%S")
             safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).strip()
             safe_title = safe_title.replace(' ', '_')[:50]
-
-            # Always use current_entry_path if set (overwrite), otherwise do not save
+            
+            # Create virtual path based on notebook
+            if self.parent.current_notebook == "Default":
+                virtual_path = f"default/{date_str}/{safe_title}_{timestamp}.enc"
+            else:
+                virtual_path = f"notebooks/{self.parent.current_notebook}/{date_str}/{safe_title}_{timestamp}.enc"
+            
+            # If updating existing entry, use the same path
             if self.parent.current_entry_path:
                 virtual_path = self.parent.current_entry_path
-            else:
-                QMessageBox.warning(self.parent, "No Entry Selected", "No entry is currently loaded. Please select or create an entry before saving.")
-                return
             
             # Create entry data with embedded images
             entry_data = {
@@ -237,7 +241,8 @@ class EntryManager:
             save_time_str = now.strftime("%H:%M:%S")
             self.parent.last_saved_label.setText(f"Saved at {save_time_str}")
             
-            # self.parent.status_bar.showMessage("Entry saved successfully!", 3000)  # Removed: no status bar
+            
+            # IMPORTANT: Reload entries AFTER saving to show the new entry
             self.load_recent_entries()
             self.parent.notebook_manager.load_notebooks()
             
@@ -265,72 +270,6 @@ class EntryManager:
             return 0
     
     def load_recent_entries(self):
-        self.parent.entry_list.clear()
-        self.parent.entries = []
-        
-        try:
-            # Determine path prefix based on current notebook
-            if self.parent.current_notebook == "Default":
-                path_prefix = "default/"
-            else:
-                path_prefix = f"notebooks/{self.parent.current_notebook}/"
-            
-            # Get all files for the current notebook
-            files = self.secure_storage.list_files(path_prefix)
-            
-            # Filter for recent entries (last 30 days)
-            recent_entries = []
-            cutoff_date = datetime.now() - timedelta(days=30)
-            
-            for file_info in files:
-                try:
-                    virtual_path = file_info["virtual_path"]
-                    if not virtual_path.endswith('.enc'):
-                        continue
-                    
-                    # Load the entry data
-                    encrypted_data = self.secure_storage.load_file(virtual_path)
-                    if encrypted_data is None:
-                        continue
-                    
-                    entry_data = json.loads(encrypted_data.decode())
-                    created_time = datetime.fromisoformat(entry_data.get("created_time", datetime.now().isoformat()))
-                    
-                    # Check if it's within the recent period
-                    if created_time >= cutoff_date:
-                        entry = JournalEntry(
-                            entry_data.get("title", "Untitled"),
-                            entry_data.get("plain_text", entry_data.get("content", "")),  # Use plain text for display
-                            entry_data.get("date", created_time.strftime("%Y-%m-%d")),
-                            virtual_path
-                        )
-                        entry.created_time = entry_data.get("created_time", "")
-                        entry.word_count = entry_data.get("word_count", 0)
-                        entry.has_images = entry_data.get("has_images", False)
-                        entry.html_content = entry_data.get("content", "")  # Store HTML content separately
-                        
-                        recent_entries.append(entry)
-                        
-                except Exception as e:
-                    print(f"Error loading entry {file_info.get('virtual_path', 'unknown')}: {e}")
-                    continue
-            
-            # Sort entries by created_time (newest first)
-            recent_entries.sort(key=lambda x: x.created_time, reverse=True)
-            self.parent.entries = recent_entries
-            
-            # Add sorted entries to list widget
-            for i, entry in enumerate(self.parent.entries):
-                item = QListWidgetItem()
-                image_indicator = " 📷" if entry.has_images else ""
-                item.setText(f"{entry.title}{image_indicator}\n{entry.date} • {entry.word_count} words")
-                item.setData(Qt.UserRole, i)
-                self.parent.entry_list.addItem(item)
-                                
-        except Exception as e:
-            print(f"Error loading entries: {e}")
-            
-    def load_recent_entries(self):
         """Load and display recent entries with enhanced formatting"""
         try:
             # Get current notebook path
@@ -348,46 +287,62 @@ class EntryManager:
                     virtual_path = file_info["virtual_path"]
                     if not virtual_path.endswith('.enc'):
                         continue
-
+                    
                     encrypted_data = self.secure_storage.load_file(virtual_path)
                     if encrypted_data is None:
                         continue
-
+                    
                     entry_data = json.loads(encrypted_data.decode())
-                    # Always set file_path to the virtual_path from storage
-                    entry_data["file_path"] = virtual_path
-                    entries.append(entry_data)
-
+                    
+                    # Create a proper entry dict with the virtual_path
+                    entry_dict = {
+                        "title": entry_data.get("title", "Untitled"),
+                        "content": entry_data.get("content", ""),
+                        "plain_text": entry_data.get("plain_text", entry_data.get("content", "")),
+                        "date": entry_data.get("date", ""),
+                        "created_time": entry_data.get("created_time", ""),
+                        "word_count": entry_data.get("word_count", 0),
+                        "has_images": entry_data.get("has_images", False),
+                        "notebook": entry_data.get("notebook", self.parent.current_notebook),
+                        "virtual_path": virtual_path  # IMPORTANT: Include the path
+                    }
+                    entries.append(entry_dict)
+                    
                 except Exception as e:
                     print(f"Error loading entry: {e}")
                     continue
-
+            
             # Sort entries by creation time (most recent first)
             entries.sort(key=lambda x: x.get("created_time", ""), reverse=True)
-
+            
             # Convert dicts to JournalEntry objects for compatibility
             entry_objs = []
             for entry in entries:
-                # Defensive: handle missing keys
-                title = entry.get("title", "Untitled")
-                content = entry.get("content", entry.get("plain_text", ""))
-                date = entry.get("date", "")
-                file_path = entry.get("file_path", entry.get("virtual_path", None))
-                je = JournalEntry(title, content, date, file_path)
-                je.word_count = entry.get("word_count", len(content.split()))
-                je.created_time = entry.get("created_time", "")
-                je.has_images = entry.get("has_images", False)
-                je.html_content = entry.get("content", "")
+                from journal_entry import JournalEntry
+                
+                je = JournalEntry(
+                    entry["title"], 
+                    entry["plain_text"], 
+                    entry["date"], 
+                    entry["virtual_path"]  # Use the correct path
+                )
+                je.word_count = entry["word_count"]
+                je.created_time = entry["created_time"]
+                je.has_images = entry["has_images"]
+                je.html_content = entry["content"]  # Store HTML content
                 entry_objs.append(je)
-            # Use the new formatting method from UI components
+            
+            # Update the UI with formatted entries
             self.parent.ui_components.update_entry_list_with_formatting(entry_objs)
+            
             # Update the entries list for compatibility
             self.parent.entries = entry_objs
             
         except Exception as e:
             print(f"Error loading recent entries: {e}")
             self.parent.entry_list.clear()
-    
+            self.parent.entries = []
+            
     def load_selected_entry(self, item):
         # Safely capture index FIRST (before any dialogs/saves)
         try:
@@ -417,8 +372,7 @@ class EntryManager:
         try:
             entry = self.parent.entries[index]
             self.parent.current_entry = entry
-            # Always set current_entry_path to the entry's virtual path
-            self.parent.current_entry_path = getattr(entry, 'file_path', None) or getattr(entry, 'virtual_path', None)
+            self.parent.current_entry_path = entry.file_path
             self.parent.entry_title.setText(entry.title)
 
             if hasattr(entry, 'html_content') and entry.html_content:
@@ -447,7 +401,6 @@ class EntryManager:
                 self.secure_storage.delete_file(self.parent.current_entry_path)
                 self.new_entry()
                 self.load_recent_entries()
-                # self.parent.status_bar.showMessage("Entry deleted successfully!", 3000)  # Removed: no status bar
                 self.parent.notebook_manager.load_notebooks()
             except Exception as e:
                 QMessageBox.critical(self.parent, "Delete Error", f"Failed to delete entry: {str(e)}")
@@ -584,9 +537,6 @@ class EntryManager:
                 # Mark as having unsaved changes
                 self.parent.unsaved_changes = True
                 self.parent.update_status()
-                # self.parent.status_bar.showMessage(
-                #     f"Image inserted at {width}×{height}px! Use Ctrl+T to resize.", 3000
-                # )  # Removed: no status bar
                 
             except Exception as e:
                 QMessageBox.critical(self.parent, "Image Error", f"Failed to insert image: {str(e)}")
@@ -667,9 +617,6 @@ class EntryManager:
             self.parent.unsaved_changes = True
             self.parent.update_status()
             
-            # self.parent.status_bar.showMessage(
-            #     f"Image resized to {new_width}×{new_height}px!", 3000
-            # )  # Removed: no status bar
         else:
             QMessageBox.warning(
                 self.parent, 
