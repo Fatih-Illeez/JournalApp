@@ -1,198 +1,158 @@
-# SecureJournal Pro
 
-A secure, encrypted personal journaling application built with PyQt5 and cryptography.
+# SecureJournal
 
-## Features
+SecureJournal is a privacy-first, fully encrypted journaling application built with PyQt5 and cryptography. It is designed for users who demand maximum security, local-only storage, and advanced organization features for their notes and images.
 
-- **End-to-End Encryption**: All entries are encrypted using Fernet (AES 128) encryption
-- **Rich Text Editor**: Full formatting support with toolbar (bold, italic, underline, colors, fonts)
-- **Multiple Notebooks**: Organize entries into separate notebooks
-- **Auto-Save**: Automatic saving every 30 seconds
-- **Date Organization**: Entries are organized by date folders
-- **Export Functionality**: Export your journal to plain text
-- **Dark Theme**: Modern dark UI with professional styling
-- **Word/Character Count**: Real-time statistics
-- **Calendar View**: Browse entries by date
+---
 
 ## Installation
 
 1. **Prerequisites**: Make sure you have Python 3.6+ installed
-
 2. **Install Dependencies**:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
+    ```bash
+    pip install -r requirements.txt
+    ```
 3. **Run the Application**:
-   ```bash
+    ```bash
+    python main.py
+    ```
 
-   # SecureJournal
+---
 
-   SecureJournal is a privacy-first, fully encrypted journaling application built with PyQt5 and cryptography. It is designed for users who demand maximum security, local-only storage, and advanced organization features for their notes and images.
+## Features
 
-   ---
+- **End-to-End Encryption**  
+   All your notes and images are encrypted using the industry-standard Fernet (AES-128) encryption. Your data is never stored in plain text, and only you have access to the encryption key.
 
-   ## Features
+- **Self-Destruct Feature**  
+   For maximum privacy, SecureJournal includes a self-destruct option. When triggered, this feature securely deletes all your encrypted data and keys, making recovery impossible. This is ideal for users who require absolute confidentiality.
 
-   - **End-to-End Encryption**  
-      All your notes and images are encrypted using the industry-standard Fernet (AES-128) encryption. Your data is never stored in plain text, and only you have access to the encryption key.
+- **Local-Only Storage**  
+   All data is stored exclusively on your machine. Nothing is ever uploaded or synced to the cloud, ensuring your journal remains private and under your control.
 
-   - **Self-Destruct Feature**  
-      For maximum privacy, SecureJournal includes a self-destruct option. When triggered, this feature securely deletes all your encrypted data and keys, making recovery impossible. This is ideal for users who require absolute confidentiality.
+- **Multiple Notebooks & Notes**  
+   Organize your thoughts with unlimited notebooks. Each notebook can contain multiple notes, allowing for flexible categorization and easy retrieval.
 
-   - **Local-Only Storage**  
-      All data is stored exclusively on your machine. Nothing is ever uploaded or synced to the cloud, ensuring your journal remains private and under your control.
+- **Rich Text & Image Support**  
+   Write with a full-featured rich text editor supporting bold, italic, underline, font size, color, and more. You can also insert images into your notes.
 
-   - **Multiple Notebooks & Notes**  
-      Organize your thoughts with unlimited notebooks. Each notebook can contain multiple notes, allowing for flexible categorization and easy retrieval.
+- **Image Rescale Support**  
+   Easily resize images within your notes to fit your layout and preferences.
 
-   - **Rich Text & Image Support**  
-      Write with a full-featured rich text editor supporting bold, italic, underline, font size, color, and more. You can also insert images into your notes.
+- **Export Functionality**  
+   Export your entire journal, individual notebooks, or single notes to plain text or HTML for backup or sharing. Exports are always decrypted and readable.
 
-   - **Image Rescale Support**  
-      Easily resize images within your notes to fit your layout and preferences.
+- **Auto-Save**  
+   Your work is automatically saved every 30 seconds, so you never lose progress.
 
-   - **Export Functionality**  
-      Export your entire journal, individual notebooks, or single notes to plain text or HTML for backup or sharing. Exports are always decrypted and readable.
+- **Calendar & Date Organization**  
+   Browse and organize entries by date using the built-in calendar view.
 
-   - **Auto-Save**  
-      Your work is automatically saved every 30 seconds, so you never lose progress.
+- **Word/Character Count**  
+   Real-time statistics help you track your writing progress.
 
-   - **Calendar & Date Organization**  
-      Browse and organize entries by date using the built-in calendar view.
+- **Modern Dark Theme**  
+   Enjoy a beautiful, distraction-free dark UI.
 
-   - **Word/Character Count**  
-      Real-time statistics help you track your writing progress.
+---
 
-   - **Modern Dark Theme**  
-      Enjoy a beautiful, distraction-free dark UI.
+## Security & Encryption
 
-   ---
+- **Encryption Details**:  
+   SecureJournal uses Fernet symmetric encryption (AES-128 in CBC mode with HMAC authentication). Each note and image is encrypted before being written to disk. The encryption key is generated on first use and never leaves your device.
 
-   ## Security & Encryption
+- **Key Storage**:  
+   The master key is stored in your user directory in a protected file. Without this key, your data is cryptographically inaccessible.
 
-   - **Encryption Details**:  
-      SecureJournal uses Fernet symmetric encryption (AES-128 in CBC mode with HMAC authentication). Each note and image is encrypted before being written to disk. The encryption key is generated on first use and never leaves your device.
+- **Self-Destruct**:  
+   The self-destruct feature securely deletes all encrypted data and the master key. This process is irreversible, ensuring that no one (not even you) can recover your journal after destruction.
 
-   - **Key Storage**:  
-      The master key is stored in your user directory in a protected file. Without this key, your data is cryptographically inaccessible.
+- **No Cloud, No Tracking**:  
+   SecureJournal does not connect to the internet, does not sync, and does not collect any analytics or telemetry.
 
-   - **Self-Destruct**:  
-      The self-destruct feature securely deletes all encrypted data and the master key. This process is irreversible, ensuring that no one (not even you) can recover your journal after destruction.
+---
 
-   - **No Cloud, No Tracking**:  
-      SecureJournal does not connect to the internet, does not sync, and does not collect any analytics or telemetry.
+## Data Storage
 
-   ---
+- **Location**:  
+   All data is stored in a dedicated folder in your user directory (e.g., `~/.secure_journal/`).
 
-   ## Data Storage
+- **Structure**:  
+   - `master.key` — Your encryption key (do not lose this!)
+   - `config.json` — Application settings
+   - `notebooks/` — All your notebooks and notes, encrypted
+   - `images/` — Encrypted images
+   - `exports/` — Your exported, decrypted notes (if you use export)
 
-   - **Location**:  
-      All data is stored in a dedicated folder in your user directory (e.g., `~/.secure_journal/`).
+---
 
-   - **Structure**:  
-      - `master.key` — Your encryption key (do not lose this!)
-      - `config.json` — Application settings
-      - `notebooks/` — All your notebooks and notes, encrypted
-      - `images/` — Encrypted images
-      - `exports/` — Your exported, decrypted notes (if you use export)
+## How to Use
 
-   ---
+1. **First Launch**:  
+    The app generates a unique encryption key and sets up your secure environment.
 
-   ## How to Use
+2. **Creating Notebooks & Notes**:  
+    Add new notebooks and notes using the intuitive sidebar and toolbar.
 
-   1. **First Launch**:  
-       The app generates a unique encryption key and sets up your secure environment.
+3. **Writing & Formatting**:  
+    Use the rich text editor to write, format, and insert images.
 
-   2. **Creating Notebooks & Notes**:  
-       Add new notebooks and notes using the intuitive sidebar and toolbar.
+4. **Image Handling**:  
+    Drag and drop images or use the insert image button. Resize images as needed.
 
-   3. **Writing & Formatting**:  
-       Use the rich text editor to write, format, and insert images.
+5. **Exporting**:  
+    Use the export feature to save your notes or entire notebooks as plain text or HTML.
 
-   4. **Image Handling**:  
-       Drag and drop images or use the insert image button. Resize images as needed.
+6. **Self-Destruct**:  
+    Trigger the self-destruct from the settings menu if you need to permanently erase all data.
 
-   5. **Exporting**:  
-       Use the export feature to save your notes or entire notebooks as plain text or HTML.
+7. **Lock & Exit**:  
+    Use the lock button to securely close the app and protect your data.
 
-   6. **Self-Destruct**:  
-       Trigger the self-destruct from the settings menu if you need to permanently erase all data.
+---
 
-   7. **Lock & Exit**:  
-       Use the lock button to securely close the app and protect your data.
+## Keyboard Shortcuts
 
-   ---
+- **Ctrl+N**: New note
+- **Ctrl+S**: Save note
+- **Ctrl+B/I/U**: Bold, Italic, Underline
+- **Ctrl+E**: Export
+- **Ctrl+L**: Lock & Exit
 
-   ## Keyboard Shortcuts
+---
 
-   - **Ctrl+N**: New note
-   - **Ctrl+S**: Save note
-   - **Ctrl+B/I/U**: Bold, Italic, Underline
-   - **Ctrl+E**: Export
-   - **Ctrl+L**: Lock & Exit
+## Security Best Practices
 
-   ---
+- **Backup Your Key**:  
+   The `master.key` file is essential. Back it up in a secure location.
 
-   ## Security Best Practices
+- **No Recovery Without Key**:  
+   If you lose your key, your data cannot be recovered.
 
-   - **Backup Your Key**:  
-      The `master.key` file is essential. Back it up in a secure location.
+- **Local Backups**:  
+   Regularly export or backup your data folder for extra safety.
 
-   - **No Recovery Without Key**:  
-      If you lose your key, your data cannot be recovered.
-
-   - **Local Backups**:  
-      Regularly export or backup your data folder for extra safety.
-
-   ---
-
-   ## Troubleshooting
-
-   - **Dependencies**:  
-      Ensure all Python dependencies are installed (`pip install -r requirements.txt`).
-
-   - **Permissions**:  
-      Make sure you have write access to your user directory.
-
-   - **Lost Key**:  
-      Without your `master.key`, your data is unrecoverable.
-
-   ---
-
-   ## Contributing
-
-   Suggestions and bug reports are welcome! Please open an issue or pull request.
-
-   ---
-
-   ## License
-
-   This project is for personal use. All rights reserved. Respect user privacy and security.
-2. **Use Lock & Exit**: Always use the lock button to close securely
-3. **Keep software updated**: Regularly update dependencies
-4. **Secure your system**: Use full disk encryption and strong passwords
+---
 
 ## Troubleshooting
 
-### Common Issues
+- **Dependencies**:  
+   Ensure all Python dependencies are installed (`pip install -r requirements.txt`).
 
-1. **Import errors**: Make sure all dependencies are installed
-2. **Permission errors**: Check write permissions in home directory
-3. **Corruption**: If entries won't load, check `~/.encrypted_journal_pro/` permissions
+- **Permissions**:  
+   Make sure you have write access to your user directory.
 
-### Recovery
+- **Lost Key**:  
+   Without your `master.key`, your data is unrecoverable.
 
-If you lose your encryption key, your entries cannot be recovered. Always backup:
-
-- The entire `~/.encrypted_journal_pro/` folder
-- Especially the `master.key` file
+---
 
 ## Contributing
 
-This is a personal project, but suggestions and bug reports are welcome!
+Suggestions and bug reports are welcome! Please open an issue or pull request.
+
+---
 
 ## License
 
-This project is for personal use. Please respect the privacy and security features.
+This project is for personal use. All rights reserved. Respect user privacy and security.
