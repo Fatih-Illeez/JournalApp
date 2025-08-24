@@ -237,7 +237,7 @@ class EntryManager:
             save_time_str = now.strftime("%H:%M:%S")
             self.parent.last_saved_label.setText(f"Saved at {save_time_str}")
             
-            self.parent.status_bar.showMessage("Entry saved successfully!", 3000)
+            # self.parent.status_bar.showMessage("Entry saved successfully!", 3000)  # Removed: no status bar
             self.load_recent_entries()
             self.parent.notebook_manager.load_notebooks()
             
@@ -447,7 +447,7 @@ class EntryManager:
                 self.secure_storage.delete_file(self.parent.current_entry_path)
                 self.new_entry()
                 self.load_recent_entries()
-                self.parent.status_bar.showMessage("Entry deleted successfully!", 3000)
+                # self.parent.status_bar.showMessage("Entry deleted successfully!", 3000)  # Removed: no status bar
                 self.parent.notebook_manager.load_notebooks()
             except Exception as e:
                 QMessageBox.critical(self.parent, "Delete Error", f"Failed to delete entry: {str(e)}")
@@ -584,9 +584,9 @@ class EntryManager:
                 # Mark as having unsaved changes
                 self.parent.unsaved_changes = True
                 self.parent.update_status()
-                self.parent.status_bar.showMessage(
-                    f"Image inserted at {width}×{height}px! Use Ctrl+T to resize.", 3000
-                )
+                # self.parent.status_bar.showMessage(
+                #     f"Image inserted at {width}×{height}px! Use Ctrl+T to resize.", 3000
+                # )  # Removed: no status bar
                 
             except Exception as e:
                 QMessageBox.critical(self.parent, "Image Error", f"Failed to insert image: {str(e)}")
@@ -667,9 +667,9 @@ class EntryManager:
             self.parent.unsaved_changes = True
             self.parent.update_status()
             
-            self.parent.status_bar.showMessage(
-                f"Image resized to {new_width}×{new_height}px!", 3000
-            )
+            # self.parent.status_bar.showMessage(
+            #     f"Image resized to {new_width}×{new_height}px!", 3000
+            # )  # Removed: no status bar
         else:
             QMessageBox.warning(
                 self.parent, 

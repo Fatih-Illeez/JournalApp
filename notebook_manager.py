@@ -256,7 +256,7 @@ class NotebookManager:
         self.parent.current_notebook = new_notebook
         self.parent.new_entry()  # Clear current entry
         self.parent.entry_manager.load_recent_entries()
-        self.parent.status_bar.showMessage(f"Switched to notebook: {new_notebook}", 2000)
+        # self.parent.status_bar.showMessage(f"Switched to notebook: {new_notebook}", 2000)  # Removed: no status bar
         
         # Update storage info
         try:

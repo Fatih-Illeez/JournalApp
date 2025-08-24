@@ -291,10 +291,10 @@ class EncryptedJournal(QMainWindow):
         self.setup_shortcuts()
         
         # Status bar
-        self.ui_components.create_status_bar()
+    # self.ui_components.create_status_bar()  # Removed: no status bar needed
         
         # Toolbar
-        self.ui_components.create_toolbar()
+    # self.ui_components.create_toolbar()  # Removed: no toolbar needed
         
         # Apply styles
         self.apply_styles()

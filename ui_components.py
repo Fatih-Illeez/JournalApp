@@ -375,22 +375,7 @@ class UIComponents:
         
         return panel
     
-    def create_status_bar(self):
-        self.parent.status_bar = QStatusBar()
-        self.parent.setStatusBar(self.parent.status_bar)
-        
-        self.parent.status_bar.showMessage("Ready to write...")
-        
-        # Add progress bar for operations
-        self.parent.progress_bar = QProgressBar()
-        self.parent.progress_bar.setVisible(False)
-        self.parent.progress_bar.setMaximumWidth(200)
-        self.parent.status_bar.addPermanentWidget(self.parent.progress_bar)
-    
-    def create_toolbar(self):
-        # REMOVED THE TOOLBAR COMPLETELY
-        # This method now does nothing, removing the storage info and cleanup toolbar
-        pass
+    # Removed create_status_bar and create_toolbar as status bar is no longer needed.
 
     def create_formatting_toolbar(self):
         toolbar = QFrame()
